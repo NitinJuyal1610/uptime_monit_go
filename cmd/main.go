@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"nitinjuyal1610/uptimeMonitor/internal/scheduler"
 	"nitinjuyal1610/uptimeMonitor/internal/server"
 	"strings"
 )
@@ -10,6 +11,12 @@ import (
 func main() {
 
 	server := server.New()
+
+	//start scheduler
+	cron := scheduler.NewScheduler()
+	cron.Start()
+
+	//start server
 	fmt.Printf("server Running at port %s \n", strings.Split(server.Addr, ":")[1])
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {

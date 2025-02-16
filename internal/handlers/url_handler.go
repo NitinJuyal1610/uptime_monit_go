@@ -57,10 +57,10 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 	urlMonitor := &models.UrlMonitors{
 		Url:                req.Url,
 		FrequencyMinutes:   req.FrequencyMinutes,
-		LastChecked:        req.LastChecked,
-		ExpectedStatusCode: req.ExpectedStatusCode,
-		Status:             req.Status,
-		TimeoutSeconds:     req.TimeoutSeconds,
+		LastChecked:        time.Now(),
+		ExpectedStatusCode: req.ExpectedStatusCode | 200,
+		Status:             "ACTIVE",
+		TimeoutSeconds:     req.TimeoutSeconds | 5,
 	}
 
 	// Create URL using service
