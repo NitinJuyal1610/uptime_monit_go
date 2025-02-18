@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"nitinjuyal1610/uptimeMonitor/internal/config"
+	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"os"
 	"strconv"
 	"time"
@@ -14,23 +15,29 @@ import (
 
 // server returns a new server
 type Server struct {
-	port int
-	db   *sql.DB
+	port     int
+	db       *sql.DB
+	Services *service.Services
 }
 
-func New() *http.Server {
+func New() (*Server, *http.Server) {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	NewServer := &Server{
-		port: port,
-		db:   config.InitDatabase(),
+
+	db := config.InitDatabase()
+	//services
+	svcs := service.NewServices(db)
+	srv := &Server{
+		port:     port,
+		db:       db,
+		Services: svcs,
 	}
 	//----
 	s := &http.Server{
-		Addr:         fmt.Sprintf(":%d", NewServer.port),
-		Handler:      NewServer.SetupRoutes(),
+		Addr:         fmt.Sprintf(":%d", srv.port),
+		Handler:      srv.SetupRoutes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	return s
+	return srv, s
 }

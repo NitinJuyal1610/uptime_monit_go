@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
@@ -32,6 +33,11 @@ func NewUrlHandler(u *service.UrlService) *UrlHandler {
 	}
 }
 
+func validateURL(inputURL string) bool {
+	parsedURL, err := url.ParseRequestURI(inputURL)
+	return err == nil && parsedURL.Scheme != "" && parsedURL.Host != ""
+}
+
 func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateURLRequest
@@ -42,9 +48,15 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate URL
+	// Non Empty URL
 	if req.Url == "" {
 		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	// Validate URL
+	if !validateURL(req.Url) {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
 
@@ -80,7 +92,9 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 
 func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 
-	values, err := uh.urlService.GetAllUrl()
+	//get query param for status
+	status := r.URL.Query().Get("status")
+	values, err := uh.urlService.GetAllUrl(status)
 
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch URL Monitors %v", err)

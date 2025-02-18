@@ -8,8 +8,9 @@ import (
 
 type UrlRepository interface {
 	Create(urlMonitor *models.UrlMonitors) (int, error)
-	GetAll() ([]*models.UrlMonitors, error)
+	GetAll(status string) ([]*models.UrlMonitors, error)
 	GetById(id int) (*models.UrlMonitors, error)
+	GetDueMonitorURLs() ([]*models.UrlMonitors, error)
 }
 
 type UrlRepositoryPg struct {
@@ -52,15 +53,21 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 	return entityId, nil
 }
 
-func (u *UrlRepositoryPg) GetAll() ([]*models.UrlMonitors, error) {
-
+func (u *UrlRepositoryPg) GetAll(status string) ([]*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
 			last_checked, expected_status_code, created_at, updated_at 
 		FROM url_monitors`
 
-	rows, err := u.db.Query(query)
+	var args []any
+	if status != "" {
+		query += ` WHERE status=$1;`
+
+		args = append(args, status)
+	}
+
+	rows, err := u.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -145,4 +152,46 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 	}
 
 	return &monitor, nil
+}
+
+func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
+	//
+	query := `
+	 SELECT 
+	    url, 
+		frequency_minutes, 
+		status, 
+		timeout_seconds, 
+		last_checked, 
+		expected_status_code
+	 WHERE status = 'ACTIVE' AND NOW() - last_checked >= (frequency_in_minutes * INTERVAL '1 minute');
+	`
+
+	rows, err := u.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var dueMonitorUrls []*models.UrlMonitors
+	for rows.Next() {
+		var dueMonitorUrl models.UrlMonitors
+
+		err := rows.Scan(
+			&dueMonitorUrl.ID,
+			&dueMonitorUrl.Url,
+			&dueMonitorUrl.Status,
+			&dueMonitorUrl.FrequencyMinutes,
+			&dueMonitorUrl.TimeoutSeconds,
+			&dueMonitorUrl.LastChecked,
+			&dueMonitorUrl.ExpectedStatusCode,
+			&dueMonitorUrl.CreatedAt,
+			&dueMonitorUrl.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		dueMonitorUrls = append(dueMonitorUrls, &dueMonitorUrl)
+	}
+	return dueMonitorUrls, nil
 }
