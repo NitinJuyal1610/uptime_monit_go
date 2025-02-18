@@ -9,3 +9,16 @@ CREATE TABLE url_monitors(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+
+CREATE TABLE url_stats (
+    id SERIAL PRIMARY KEY,
+    monitor_id INTEGER NOT NULL REFERENCES url_monitors(id) ON DELETE CASCADE,
+    status_code INTEGER,
+    response_time FLOAT,
+    is_up BOOLEAN,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)

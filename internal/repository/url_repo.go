@@ -157,14 +157,17 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
 	//
 	query := `
-	 SELECT 
+	 SELECT
+	 	id, 
 	    url, 
-		frequency_minutes, 
 		status, 
+		frequency_minutes, 
 		timeout_seconds, 
 		last_checked, 
-		expected_status_code
-	 WHERE status = 'ACTIVE' AND NOW() - last_checked >= (frequency_in_minutes * INTERVAL '1 minute');
+		expected_status_code,
+		created_at
+	 FROM url_monitors
+	 WHERE status = 'ACTIVE' AND NOW() - last_checked >= (frequency_minutes * INTERVAL '1 minute');
 	`
 
 	rows, err := u.db.Query(query)
@@ -172,7 +175,6 @@ func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
 	defer rows.Close()
-
 	var dueMonitorUrls []*models.UrlMonitors
 	for rows.Next() {
 		var dueMonitorUrl models.UrlMonitors
@@ -186,7 +188,6 @@ func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
 			&dueMonitorUrl.LastChecked,
 			&dueMonitorUrl.ExpectedStatusCode,
 			&dueMonitorUrl.CreatedAt,
-			&dueMonitorUrl.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)

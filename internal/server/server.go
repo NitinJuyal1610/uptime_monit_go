@@ -24,7 +24,7 @@ func New() (*Server, *http.Server) {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 
 	db := config.InitDatabase()
-	//services
+	//services init
 	svcs := service.NewServices(db)
 	srv := &Server{
 		port:     port,

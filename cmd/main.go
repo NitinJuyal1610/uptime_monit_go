@@ -18,7 +18,7 @@ func main() {
 	schedulerService.Start()
 	defer schedulerService.Stop()
 	// start server
-	fmt.Printf("server Running at port %s \n", strings.Split(server.Addr, ":")[1])
+	fmt.Printf("server running at port %s \n", strings.Split(server.Addr, ":")[1])
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
