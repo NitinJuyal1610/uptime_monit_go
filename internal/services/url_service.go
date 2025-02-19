@@ -20,9 +20,10 @@ type RawStats struct {
 	StatusCode   int           `json:"status_code"`
 	ResponseTime time.Duration `json:"response_time"`
 	IsUp         bool          `json:"is_up"`
+	MonitorId    int           `json:"monitor_id"`
 }
 
-func NewUrlService(urlRepo repository.UrlRepository) *UrlService {
+func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRepository) *UrlService {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			MaxIdleConns:        100,
@@ -31,7 +32,7 @@ func NewUrlService(urlRepo repository.UrlRepository) *UrlService {
 		},
 		Timeout: 10 * time.Second,
 	}
-	return &UrlService{urlRepo: urlRepo, httpClient: httpClient}
+	return &UrlService{urlRepo: urlRepo, httpClient: httpClient, statRepo: statRepo}
 }
 
 func (us *UrlService) CreateUrl(urlMonitor *models.UrlMonitors) (int, error) {
@@ -47,32 +48,33 @@ func (us *UrlService) GetMonitorById(id int) (*models.UrlMonitors, error) {
 }
 
 func (us *UrlService) ProcessDueMonitorURLs() error {
-
 	// Channels for stats and Concurrent api calls limit
 	// Fetch URLs to process
 	urls, err := us.urlRepo.GetDueMonitorURLs()
-
 	if err != nil {
 		return fmt.Errorf("failed to get urls : %w", err)
 	}
-
-	statChan := make(chan struct{}, len(urls))
+	statChan := make(chan *RawStats, len(urls))
 	limitChan := make(chan bool, 10)
 
+	fmt.Printf("%d urls to be processed \n", len(urls))
 	var wg sync.WaitGroup
 
 	for _, url := range urls {
-
 		wg.Add(1)
-		go func(targetUrl string) {
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		go func(targetUrl string, monitorId int) {
+			//semaphore increment
+			limitChan <- true
+			defer func() {
+				<-limitChan
+			}()
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(url.TimeoutSeconds)*time.Second)
 			defer cancel()
 			defer wg.Done()
 			stats, _ := us.fetchStatsFromUrl(ctx, targetUrl)
-			fmt.Println(stats)
-
-			// statChan <- stats
-		}(url.Url)
+			stats.MonitorId = monitorId
+			statChan <- stats
+		}(url.Url, url.ID)
 	}
 
 	go func() {
@@ -81,11 +83,49 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 		close(limitChan)
 	}()
 
+	return us.saveResultsToDB(statChan)
+}
+
+func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
+
+	var allStats []*RawStats
+
+	for s := range statChan {
+		allStats = append(allStats, s)
+	}
+
+	if len(allStats) == 0 {
+		return nil
+	}
+
+	urlStats := make([]*models.UrlStats, len(allStats))
+	for i, raw := range allStats {
+		urlStats[i] = &models.UrlStats{
+			MonitorId:    raw.MonitorId,
+			StatusCode:   raw.StatusCode,
+			ResponseTime: raw.ResponseTime,
+			IsUp:         raw.IsUp,
+		}
+
+		//update last
+		err := us.urlRepo.Update(urlStats[i].MonitorId, &models.UrlMonitors{
+			LastChecked: time.Now().UTC().Truncate(time.Minute),
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to update timestamp: %v", err)
+		}
+	}
+
+	_, err := us.statRepo.BulkCreate(urlStats)
+	if err != nil {
+		return fmt.Errorf("failed to save stats to DB: %w", err)
+	}
+
 	return nil
 }
 
 func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string) (*RawStats, error) {
-
 	var (
 		start        time.Time
 		responseTime time.Duration
@@ -109,6 +149,6 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string) (*RawSt
 		ResponseTime: responseTime,
 		IsUp:         statusCode >= 200 && statusCode < 400,
 	}
-	fmt.Printf("Url %s -> Results : %#v", url, rawStats)
+
 	return rawStats, nil
 }

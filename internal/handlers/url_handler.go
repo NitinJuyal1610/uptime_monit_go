@@ -69,7 +69,7 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 	urlMonitor := &models.UrlMonitors{
 		Url:                req.Url,
 		FrequencyMinutes:   req.FrequencyMinutes,
-		LastChecked:        time.Now(),
+		LastChecked:        time.Now().UTC(),
 		ExpectedStatusCode: req.ExpectedStatusCode | 200,
 		Status:             "ACTIVE",
 		TimeoutSeconds:     req.TimeoutSeconds | 5,
@@ -121,7 +121,7 @@ func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
 	monitor, err := uh.urlService.GetMonitorById(id)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to fetch monitor: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Failed to fetch info: %v", err), http.StatusBadRequest)
 		return
 	}
 

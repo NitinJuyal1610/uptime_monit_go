@@ -13,7 +13,8 @@ type Services struct {
 func NewServices(db *sql.DB) *Services {
 
 	urlRepo := repository.NewUrlRepository(db)
-	urlService := NewUrlService(urlRepo)
+	statRepo := repository.NewStatRepository(db)
+	urlService := NewUrlService(urlRepo, statRepo)
 
 	return &Services{
 		UrlService: urlService,
