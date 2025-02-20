@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
@@ -59,7 +60,6 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 
 	fmt.Printf("%d urls to be processed \n", len(urls))
 	var wg sync.WaitGroup
-
 	for _, url := range urls {
 		wg.Add(1)
 		go func(targetUrl string, monitorId int) {
@@ -127,28 +127,48 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 
 func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string) (*RawStats, error) {
 	var (
-		start        time.Time
+		start        = time.Now()
 		responseTime time.Duration
 		statusCode   int
 	)
-	start = time.Now()
-	//call head req
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	resp, err := us.httpClient.Do(req)
 	responseTime = time.Since(start)
-	statusCode = resp.StatusCode
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to get response : %w", err)
+		if errors.Is(err, context.DeadlineExceeded) {
+			fmt.Println("Request timed out:", err)
+			statusCode = 408
+		} else if errors.Is(err, context.Canceled) {
+			fmt.Println("Request was canceled:", err)
+			statusCode = 499
+		} else {
+			fmt.Println("Failed to fetch response:", err)
+			statusCode = 500
+		}
+
+		return &RawStats{
+			StatusCode:   statusCode,
+			ResponseTime: responseTime,
+			IsUp:         false,
+		}, err
 	}
+
 	defer resp.Body.Close()
+
+	statusCode = resp.StatusCode
+
 	rawStats := &RawStats{
 		StatusCode:   statusCode,
 		ResponseTime: responseTime,
 		IsUp:         statusCode >= 200 && statusCode < 400,
 	}
 
+	fmt.Printf("Raw stats %s -> %+v\n", url, rawStats)
 	return rawStats, nil
 }
