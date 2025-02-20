@@ -18,10 +18,11 @@ type UrlService struct {
 }
 
 type RawStats struct {
-	StatusCode   int           `json:"status_code"`
-	ResponseTime time.Duration `json:"response_time"`
-	IsUp         bool          `json:"is_up"`
-	MonitorId    int           `json:"monitor_id"`
+	StatusCode         int           `json:"status_code"`
+	ResponseTime       time.Duration `json:"response_time"`
+	IsUp               bool          `json:"is_up"`
+	MonitorId          int           `json:"monitor_id"`
+	ExpectedStatusCode int           `json:"expected_status_code"`
 }
 
 func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRepository) *UrlService {
@@ -62,7 +63,7 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 	var wg sync.WaitGroup
 	for _, url := range urls {
 		wg.Add(1)
-		go func(targetUrl string, monitorId int) {
+		go func(targetUrl string, monitorId int, expectedStatusCode int) {
 			//semaphore increment
 			limitChan <- true
 			defer func() {
@@ -73,8 +74,9 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 			defer wg.Done()
 			stats, _ := us.fetchStatsFromUrl(ctx, targetUrl)
 			stats.MonitorId = monitorId
+			stats.ExpectedStatusCode = expectedStatusCode
 			statChan <- stats
-		}(url.Url, url.ID)
+		}(url.Url, url.ID, url.ExpectedStatusCode)
 	}
 
 	go func() {
@@ -100,6 +102,21 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 
 	urlStats := make([]*models.UrlStats, len(allStats))
 	for i, raw := range allStats {
+
+		var status models.Status
+		switch {
+		case raw.IsUp && raw.StatusCode == raw.ExpectedStatusCode:
+			status = models.StatusUp
+		case raw.IsUp && raw.StatusCode != raw.ExpectedStatusCode:
+			status = models.StatusError
+		case !raw.IsUp && raw.StatusCode == http.StatusRequestTimeout:
+			status = models.StatusTimeout
+		case !raw.IsUp:
+			status = models.StatusDown
+		default:
+			status = models.StatusUnknown
+		}
+
 		urlStats[i] = &models.UrlStats{
 			MonitorId:    raw.MonitorId,
 			StatusCode:   raw.StatusCode,
@@ -110,8 +127,8 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 		//update last
 		err := us.urlRepo.Update(urlStats[i].MonitorId, &models.UrlMonitors{
 			LastChecked: time.Now().UTC().Truncate(time.Minute),
+			Status:      status,
 		})
-
 		if err != nil {
 			return fmt.Errorf("failed to update timestamp: %v", err)
 		}

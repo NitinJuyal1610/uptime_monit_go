@@ -172,7 +172,7 @@ func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
 		expected_status_code,
 		created_at
 	 FROM url_monitors
-	 WHERE status = 'ACTIVE' 
+	 WHERE status NOT IN ('PAUSED','DELETED','PENDING')
 	 AND 
 	    (
         last_checked IS NULL 

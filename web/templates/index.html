@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NjMonster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      src="https://unpkg.com/htmx.org@2.0.4"
+      integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+      <div class="mb-8">
+        <div class="flex justify-between items-center">
+          <h1 class="text-2xl font-bold">Uptime Monitor</h1>
+          <button
+            class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            + Add Monitor
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="lg:col-span-1">
+          <div class="bg-gray-800 rounded-xl p-4">
+            <div class="mb-4">
+              <input
+                type="text"
+                placeholder="Search monitors..."
+                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
+
+            <div class="space-y-2" hx-get="/api/monitors" hx-trigger="load">
+              <!-- Active Monitor -->
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-3">
+          <div class="bg-gray-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-xl font-bold">example.com</h2>
+                <p class="text-gray-400">https://example.com</p>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  Edit
+                </button>
+                <button
+                  class="px-3 py-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div class="bg-gray-700 rounded-lg p-4">
+                <div class="text-sm text-gray-400">Response Time</div>
+                <div class="text-2xl font-bold">127 ms</div>
+              </div>
+              <div class="bg-gray-700 rounded-lg p-4">
+                <div class="text-sm text-gray-400">24h Uptime</div>
+                <div class="text-2xl font-bold">99.9%</div>
+              </div>
+              <div class="bg-gray-700 rounded-lg p-4">
+                <div class="text-sm text-gray-400">30d Uptime</div>
+                <div class="text-2xl font-bold">99.8%</div>
+              </div>
+              <div class="bg-gray-700 rounded-lg p-4">
+                <div class="text-sm text-gray-400">Last Checked</div>
+                <div class="text-2xl font-bold">2m ago</div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="text-left text-gray-400">
+                    <th class="p-3">Timestamp</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Response Time</th>
+                    <th class="p-3">Status Code</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                  <tr class="hover:bg-gray-700/50">
+                    <td class="p-3">2024-02-20 15:30:00</td>
+                    <td class="p-3">
+                      <span class="text-emerald-500">●</span> Up
+                    </td>
+                    <td class="p-3">127 ms</td>
+                    <td class="p-3">200</td>
+                  </tr>
+                  <tr class="hover:bg-gray-700/50">
+                    <td class="p-3">2024-02-20 15:25:00</td>
+                    <td class="p-3">
+                      <span class="text-emerald-500">●</span> Up
+                    </td>
+                    <td class="p-3">135 ms</td>
+                    <td class="p-3">200</td>
+                  </tr>
+                  <tr class="hover:bg-gray-700/50">
+                    <td class="p-3">2024-02-20 15:20:00</td>
+                    <td class="p-3">
+                      <span class="text-red-500">●</span> Down
+                    </td>
+                    <td class="p-3">2543 ms</td>
+                    <td class="p-3">503</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fixed inset-0 bg-black/50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+          <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">Add New Monitor</h3>
+            <form>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1">URL</label>
+                  <input
+                    type="url"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Check Frequency (minutes)</label
+                  >
+                  <input
+                    type="number"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Expected Status Code</label
+                  >
+                  <input
+                    type="number"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+                  />
+                </div>
+                <div class="flex justify-end gap-2 mt-6">
+                  <button
+                    class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
+                  >
+                    Add Monitor
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

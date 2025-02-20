@@ -8,6 +8,7 @@ import (
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
+	templates "nitinjuyal1610/uptimeMonitor/web"
 	"strconv"
 	"time"
 
@@ -15,7 +16,8 @@ import (
 )
 
 type UrlHandler struct {
-	urlService *service.UrlService
+	urlService      *service.UrlService
+	templateManager *templates.TemplateManager
 }
 
 type CreateURLRequest struct {
@@ -27,9 +29,10 @@ type CreateURLRequest struct {
 	ExpectedStatusCode int       `json:"expected_status_code,omitempty"`
 }
 
-func NewUrlHandler(u *service.UrlService) *UrlHandler {
+func NewUrlHandler(u *service.UrlService, tm *templates.TemplateManager) *UrlHandler {
 	return &UrlHandler{
-		urlService: u,
+		urlService:      u,
+		templateManager: tm,
 	}
 }
 
@@ -101,12 +104,15 @@ func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errStr, http.StatusBadRequest)
 	}
 
-	res := utils.JSONResponse{
-		Message: "Fetch URL monitors successfully",
-		Data:    map[string]any{"monitors": values},
-	}
+	// res := utils.JSONResponse{
+	// 	Message: "Fetch URL monitors successfully",
+	// 	Data:    map[string]any{"monitors": values},
+	// }
 
-	utils.SendJSONResponse(w, http.StatusAccepted, res)
+	uh.templateManager.Render(w, "monitor-list.html", values)
+	// //json response
+	// utils.SendJSONResponse(w, http.StatusAccepted, res)
+
 }
 
 func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
