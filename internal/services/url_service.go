@@ -41,8 +41,8 @@ func (us *UrlService) CreateUrl(urlMonitor *models.UrlMonitors) (int, error) {
 	return us.urlRepo.Create(urlMonitor)
 }
 
-func (us *UrlService) GetAllUrl(status string) ([]*models.UrlMonitors, error) {
-	return us.urlRepo.GetAll(status)
+func (us *UrlService) GetAllUrl(status string, keyword string) ([]*models.UrlMonitors, error) {
+	return us.urlRepo.GetAll(status, keyword)
 }
 
 func (us *UrlService) GetMonitorById(id int) (*models.UrlMonitors, error) {

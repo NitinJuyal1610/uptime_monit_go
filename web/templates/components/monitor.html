@@ -1,0 +1,31 @@
+{{define "monitor-item"}}
+<div 
+  class="bg-gray-900 border 
+    {{if eq .Status "UP"}}border-emerald-500 
+    {{else if or (eq .Status "DOWN") (eq .Status "TIMEOUT")}} border-red-500 
+    {{else if eq .Status "UNKNOWN"}} border-gray-500 
+    {{else}} border-orange-500 
+    {{end}} 
+    rounded-2xl p-5 cursor-pointer shadow-lg transition hover:bg-gray-800"
+>
+  <div class="flex items-center justify-between">
+    <span class="font-semibold text-white text-lg truncate">{{.Url}}</span>
+    <span
+      class="w-4 h-4 rounded-full shadow-lg ring-2 animate-pulse 
+        {{if eq .Status "UP"}} bg-emerald-500 border-emerald-500 ring-emerald-300  
+        {{else if or (eq .Status "DOWN") (eq .Status "TIMEOUT")}} bg-red-500 border-red-500 ring-red-300 
+        {{else if eq .Status "UNKNOWN"}} bg-gray-500 border-gray-500 ring-gray-300 
+        {{else}} bg-orange-500 border-orange-500 ring-orange-300 
+        {{end}}"
+    ></span>
+  </div>
+  <div class="flex items-center justify-between text-gray-400 text-sm mt-3">
+    <span class="flex items-center gap-1">
+      ⏳ <span>Check every {{.FrequencyMinutes}}m</span>
+    </span>
+    <span class="flex items-center gap-1">
+      ⏱ <span>Timeout: {{.TimeoutSeconds}}s</span>
+    </span>
+  </div>
+</div>
+{{end}}

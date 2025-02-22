@@ -9,7 +9,7 @@ import (
 
 type UrlRepository interface {
 	Create(urlMonitor *models.UrlMonitors) (int, error)
-	GetAll(status string) ([]*models.UrlMonitors, error)
+	GetAll(status string, keyword string) ([]*models.UrlMonitors, error)
 	GetById(id int) (*models.UrlMonitors, error)
 	GetDueMonitorURLs() ([]*models.UrlMonitors, error)
 	Update(id int, urlMonitor *models.UrlMonitors) error
@@ -55,7 +55,7 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 	return entityId, nil
 }
 
-func (u *UrlRepositoryPg) GetAll(status string) ([]*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetAll(status string, keyword string) ([]*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
@@ -64,9 +64,17 @@ func (u *UrlRepositoryPg) GetAll(status string) ([]*models.UrlMonitors, error) {
 
 	var args []any
 	if status != "" {
-		query += ` WHERE status=$1;`
-
+		query += ` WHERE status=$1`
 		args = append(args, status)
+	}
+
+	if keyword != "" {
+		if len(args) > 0 {
+			query += ` AND url LIKE $` + fmt.Sprint(len(args)+1)
+		} else {
+			query += ` WHERE url LIKE $1`
+		}
+		args = append(args, "%"+keyword+"%")
 	}
 
 	rows, err := u.db.Query(query, args...)

@@ -3,21 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NjMonster</title>
+    <title>Uptime Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script
       src="https://unpkg.com/htmx.org@2.0.4"
       integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
       crossorigin="anonymous"
     ></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
   </head>
-  <body class="bg-gray-900 text-gray-100 min-h-screen">
+  <body class="bg-gray-950 text-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
       <div class="mb-8">
         <div class="flex justify-between items-center">
-          <h1 class="text-2xl font-bold">Uptime Monitor</h1>
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6 text-emerald-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Uptime Monitor</h1>
+          </div>
           <button
-            class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg transition-colors"
+            hx-on:click="document.getElementById('add-monitor-modal').classList.remove('hidden')"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl transition-colors"
           >
             + Add Monitor
           </button>
@@ -26,31 +56,42 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div class="lg:col-span-1">
-          <div class="bg-gray-800 rounded-xl p-4">
+          <div
+            class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl p-4"
+          >
             <div class="mb-4">
               <input
                 type="text"
+                name="q"
+                hx-get="/api/monitors"
+                hx-target="#monitor-list"
                 placeholder="Search monitors..."
-                class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
+                class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
-            <div class="space-y-2" hx-get="/api/monitors" hx-trigger="load">
-              <!-- Active Monitor -->
-            </div>
+            <div
+              id="monitor-list"
+              class="space-y-2"
+              hx-get="/api/monitors"
+              hx-trigger="load"
+            ></div>
           </div>
         </div>
 
         <div class="lg:col-span-3">
-          <div class="bg-gray-800 rounded-xl p-6">
+          <div
+            class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl p-6"
+          >
             <div class="flex items-center justify-between mb-6">
               <div>
-                <h2 class="text-xl font-bold">example.com</h2>
+                <h2 class="text-xl font-bold text-white">example.com</h2>
                 <p class="text-gray-400">https://example.com</p>
               </div>
-              <div class="flex gap-2">
+              <!-- <div class="flex gap-2">
                 <button
-                  class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300"
                 >
                   Edit
                 </button>
@@ -59,109 +100,101 @@
                 >
                   Delete
                 </button>
-              </div>
+              </div> -->
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div class="bg-gray-700 rounded-lg p-4">
+              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                 <div class="text-sm text-gray-400">Response Time</div>
-                <div class="text-2xl font-bold">127 ms</div>
+                <div class="text-2xl font-bold text-white">127 ms</div>
               </div>
-              <div class="bg-gray-700 rounded-lg p-4">
+              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                 <div class="text-sm text-gray-400">24h Uptime</div>
-                <div class="text-2xl font-bold">99.9%</div>
+                <div class="text-2xl font-bold text-emerald-500">99.9%</div>
               </div>
-              <div class="bg-gray-700 rounded-lg p-4">
+              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                 <div class="text-sm text-gray-400">30d Uptime</div>
-                <div class="text-2xl font-bold">99.8%</div>
+                <div class="text-2xl font-bold text-emerald-500">99.8%</div>
               </div>
-              <div class="bg-gray-700 rounded-lg p-4">
+              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                 <div class="text-sm text-gray-400">Last Checked</div>
-                <div class="text-2xl font-bold">2m ago</div>
+                <div class="text-2xl font-bold text-white">2m ago</div>
               </div>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="text-left text-gray-400">
-                    <th class="p-3">Timestamp</th>
-                    <th class="p-3">Status</th>
-                    <th class="p-3">Response Time</th>
-                    <th class="p-3">Status Code</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700">
-                  <tr class="hover:bg-gray-700/50">
-                    <td class="p-3">2024-02-20 15:30:00</td>
-                    <td class="p-3">
-                      <span class="text-emerald-500">●</span> Up
-                    </td>
-                    <td class="p-3">127 ms</td>
-                    <td class="p-3">200</td>
-                  </tr>
-                  <tr class="hover:bg-gray-700/50">
-                    <td class="p-3">2024-02-20 15:25:00</td>
-                    <td class="p-3">
-                      <span class="text-emerald-500">●</span> Up
-                    </td>
-                    <td class="p-3">135 ms</td>
-                    <td class="p-3">200</td>
-                  </tr>
-                  <tr class="hover:bg-gray-700/50">
-                    <td class="p-3">2024-02-20 15:20:00</td>
-                    <td class="p-3">
-                      <span class="text-red-500">●</span> Down
-                    </td>
-                    <td class="p-3">2543 ms</td>
-                    <td class="p-3">503</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="fixed inset-0 bg-black/50 hidden">
+      <div class="fixed inset-0 bg-black/50 hidden" id="add-monitor-modal">
         <div class="flex items-center justify-center min-h-screen p-4">
-          <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md">
-            <h3 class="text-xl font-bold mb-4">Add New Monitor</h3>
-            <form>
+          <div
+            class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl p-6 w-full max-w-md"
+          >
+            <h3 class="text-xl font-bold mb-4 text-white">Add New Monitor</h3>
+            <form
+              hx-post="/api/monitors"
+              hx-target="#monitor-list"
+              hx-swap="beforeend"
+              hx-on::after-request="
+            if (event.detail.successful) { 
+              document.getElementById('add-monitor-modal').classList.add('hidden'); 
+              this.reset(); 
+            }"
+            >
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium mb-1">URL</label>
+                  <label class="block text-sm font-medium mb-1 text-gray-300"
+                    >URL</label
+                  >
                   <input
                     type="url"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+                    required
+                    name="url"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium mb-1"
+                  <label class="block text-sm font-medium mb-1 text-gray-300"
                     >Check Frequency (minutes)</label
                   >
                   <input
                     type="number"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+                    name="frequency"
+                    required
+                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-medium mb-1"
+                  <label class="block text-sm font-medium mb-1 text-gray-300"
                     >Expected Status Code</label
                   >
                   <input
                     type="number"
-                    class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2"
+                    name="status_code"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1 text-gray-300"
+                    >Timeout Seconds</label
+                  >
+                  <input
+                    type="number"
+                    name="timeout"
+                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
                 <div class="flex justify-end gap-2 mt-6">
                   <button
-                    class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                    type="button"
+                    hx-on:click="document.getElementById('add-monitor-modal').classList.add('hidden')"
+                    class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300"
                   >
                     Cancel
                   </button>
                   <button
-                    class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg transition-colors"
+                    type="submit"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
                   >
                     Add Monitor
                   </button>

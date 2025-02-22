@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -42,62 +41,90 @@ func validateURL(inputURL string) bool {
 }
 
 func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
-
-	var req CreateURLRequest
-	//decode body
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&req); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to parse request: %v", err), http.StatusBadRequest)
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Non Empty URL
-	if req.Url == "" {
+	// Parse form data
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	// Extract form values
+	url := r.FormValue("url")
+	frequencyMinutes, _ := strconv.Atoi(r.FormValue("frequency"))
+	expectedStatusCode, _ := strconv.Atoi(r.FormValue("status_code"))
+	timeoutSeconds, _ := strconv.Atoi(r.FormValue("timeout"))
+
+	// Non-Empty URL validation
+	if url == "" {
 		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
 		return
 	}
 
 	// Validate URL
-	if !validateURL(req.Url) {
+	if !validateURL(url) {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
 
 	// Validate Frequency
-	if req.FrequencyMinutes <= 0 {
-		http.Error(w, "Frequency cannot be empty", http.StatusBadRequest)
+	if frequencyMinutes <= 0 {
+		http.Error(w, "Frequency must be greater than zero", http.StatusBadRequest)
 		return
 	}
 
-	urlMonitor := &models.UrlMonitors{
-		Url:                req.Url,
-		FrequencyMinutes:   req.FrequencyMinutes,
-		LastChecked:        time.Now().UTC().Truncate(time.Minute),
-		ExpectedStatusCode: req.ExpectedStatusCode | 200,
-		Status:             "ACTIVE",
-		TimeoutSeconds:     req.TimeoutSeconds | 5,
+	if timeoutSeconds <= 0 {
+		http.Error(w, "Timeout must be greater than 0", http.StatusBadRequest)
+		return
 	}
 
-	// Create URL using service
+	// Create URL monitor object
+	urlMonitor := &models.UrlMonitors{
+		Url:                url,
+		FrequencyMinutes:   frequencyMinutes,
+		LastChecked:        time.Now().UTC().Truncate(time.Minute),
+		ExpectedStatusCode: expectedStatusCode, // | 200 is not needed
+		Status:             models.StatusUnknown,
+		TimeoutSeconds:     timeoutSeconds, // | 5 is not needed
+	}
+
+	// Store in DB via service
 	entityId, err := uh.urlService.CreateUrl(urlMonitor)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to create URL: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	res := utils.JSONResponse{
-		Message: "Created url entry successfully!",
-		Data:    map[string]any{"entityId": entityId},
-	}
+	fmt.Println("Successfully created a monitor with id: ", entityId)
 
-	utils.SendJSONResponse(w, http.StatusCreated, res)
+	uh.templateManager.Render(w, "monitor-item", urlMonitor)
+	// Previous JSON decoder (not needed for HTMX form submissions)
+	// var req CreateURLRequest
+	// decoder := json.NewDecoder(r.Body)
+	// if err := decoder.Decode(&req); err != nil {
+	// 	http.Error(w, fmt.Sprintf("Failed to parse request: %v", err), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// res := utils.JSONResponse{
+	// 	Message: "Created URL entry successfully!",
+	// 	Data:    map[string]any{"entityId": entityId},
+	// }
+
+	// utils.SendJSONResponse(w, http.StatusCreated, res)
+
 }
 
 func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 
 	//get query param for status
 	status := r.URL.Query().Get("status")
-	values, err := uh.urlService.GetAllUrl(status)
+	keyword := r.URL.Query().Get("q")
+	values, err := uh.urlService.GetAllUrl(status, keyword)
 
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch URL Monitors %v", err)
@@ -112,7 +139,6 @@ func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 	uh.templateManager.Render(w, "monitor-list.html", values)
 	// //json response
 	// utils.SendJSONResponse(w, http.StatusAccepted, res)
-
 }
 
 func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
