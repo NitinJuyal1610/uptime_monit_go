@@ -19,5 +19,6 @@ Multiple Failed checks can mark sevice as down(threshold for now its 1)
 2. CRUD apis Uptime monitor (no auth) ✅
 3. Basic UI ✅
 4. Add List Integration ✅
+5. Summary Stats Integration
 
 ```
