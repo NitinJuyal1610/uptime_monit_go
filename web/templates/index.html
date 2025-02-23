@@ -80,48 +80,8 @@
           </div>
         </div>
 
-        <div class="lg:col-span-3">
-          <div
-            class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl p-6"
-          >
-            <div class="flex items-center justify-between mb-6">
-              <div>
-                <h2 class="text-xl font-bold text-white">example.com</h2>
-                <p class="text-gray-400">https://example.com</p>
-              </div>
-              <!-- <div class="flex gap-2">
-                <button
-                  class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-gray-300"
-                >
-                  Edit
-                </button>
-                <button
-                  class="px-3 py-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
-              </div> -->
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-sm text-gray-400">Response Time</div>
-                <div class="text-2xl font-bold text-white">127 ms</div>
-              </div>
-              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-sm text-gray-400">24h Uptime</div>
-                <div class="text-2xl font-bold text-emerald-500">99.9%</div>
-              </div>
-              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-sm text-gray-400">30d Uptime</div>
-                <div class="text-2xl font-bold text-emerald-500">99.8%</div>
-              </div>
-              <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-sm text-gray-400">Last Checked</div>
-                <div class="text-2xl font-bold text-white">2m ago</div>
-              </div>
-            </div>
-          </div>
+        <div class="lg:col-span-3" id="stat-summary">
+          <!-- stats div -->
         </div>
       </div>
 
@@ -159,7 +119,7 @@
                   >
                   <input
                     type="number"
-                    name="frequency"
+                    name="frequency_minutes"
                     required
                     class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
@@ -180,7 +140,7 @@
                   >
                   <input
                     type="number"
-                    name="timeout"
+                    name="timeout_seconds"
                     class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>

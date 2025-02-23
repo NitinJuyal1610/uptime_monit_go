@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"strings"
-	"time"
 )
 
 type StatRepository interface {
-	Create(urlMonitor *models.UrlStats) (int, error)
+	GetStatsByMonitorId(monitorId int) ([]*models.UrlStats, error)
 	BulkCreate(urlStats []*models.UrlStats) ([]int, error)
 }
 
@@ -21,32 +20,36 @@ func NewStatRepository(db *sql.DB) StatRepository {
 	return &StatRepositoryPg{db}
 }
 
-func (sr *StatRepositoryPg) Create(urlStats *models.UrlStats) (int, error) {
-	var entityId int
-	createQuery := `
-	INSERT INTO url_monitors (
-		monitor_id, 
-		status_code, 
-		response_time, 
-		is_up 
-	) 
-	VALUES ($1, $2, $3, $4) 
-	RETURNING id
-`
+func (sr *StatRepositoryPg) GetStatsByMonitorId(monitorId int) ([]*models.UrlStats, error) {
 
-	err := sr.db.QueryRow(
-		createQuery,
-		urlStats.MonitorId,
-		urlStats.StatusCode,
-		urlStats.ResponseTime,
-		urlStats.IsUp,
-	).Scan(&entityId)
+	statsQuery := `
+		SELECT 
+			id,
+			status_code,
+			response_time,
+			is_up,
+			monitor_id,
+			timestamp,
+			created_at
+		FROM url_stats WHERE monitor_id = $1
+	`
+	rows, err := sr.db.Query(statsQuery, monitorId)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
+	defer rows.Close()
 
-	return entityId, nil
+	var urlStats []*models.UrlStats
+
+	for rows.Next() {
+		var statItem models.UrlStats
+		if err := rows.Scan(&statItem.ID, &statItem.StatusCode, &statItem.ResponseTime, &statItem.IsUp, &statItem.MonitorId, &statItem.Timestamp, &statItem.CreatedAt); err != nil {
+			return nil, err
+		}
+		urlStats = append(urlStats, &statItem)
+	}
+	return urlStats, nil
 }
 
 func (sr *StatRepositoryPg) BulkCreate(urlStats []*models.UrlStats) ([]int, error) {
@@ -59,7 +62,7 @@ func (sr *StatRepositoryPg) BulkCreate(urlStats []*models.UrlStats) ([]int, erro
 	valueArgs := make([]interface{}, 0, len(urlStats)*4)
 
 	for i, stat := range urlStats {
-		timeSeconds := float64(stat.ResponseTime) / float64(time.Second)
+		timeSeconds := stat.ResponseTime
 		valueStrings[i] = fmt.Sprintf("($%d, $%d, $%d, $%d)", i*4+1, i*4+2, i*4+3, i*4+4)
 		valueArgs = append(valueArgs, stat.MonitorId, stat.StatusCode, timeSeconds, stat.IsUp)
 	}

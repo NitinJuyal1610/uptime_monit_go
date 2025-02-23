@@ -18,12 +18,13 @@ func (s *Server) SetupRoutes() http.Handler {
 
 	clientHandler := handler.NewClientHandler()
 	urlHandler := handler.NewUrlHandler(s.Services.UrlService, templateManager)
-
+	statHandler := handler.NewStatHandler(s.Services.StatService, templateManager)
 	//routes
 	r.Get("/", clientHandler.RenderDashboard)
 	r.Post("/api/monitors", urlHandler.CreateURLMonitor)
 	r.Get("/api/monitors", urlHandler.GetURLMonitors)
 	r.Get("/api/monitors/{id}", urlHandler.GetMonitorById)
+	r.Get("/api/monitors/{id}/stats", statHandler.GetUrlStats)
 
 	return r
 }

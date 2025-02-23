@@ -120,7 +120,7 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 		urlStats[i] = &models.UrlStats{
 			MonitorId:    raw.MonitorId,
 			StatusCode:   raw.StatusCode,
-			ResponseTime: raw.ResponseTime,
+			ResponseTime: raw.ResponseTime.Seconds(),
 			IsUp:         raw.IsUp,
 		}
 

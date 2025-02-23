@@ -55,11 +55,10 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 
 	// Extract form values
 	url := r.FormValue("url")
-	frequencyMinutes, _ := strconv.Atoi(r.FormValue("frequency"))
+	frequencyMinutes, _ := strconv.Atoi(r.FormValue("frequency_minutes"))
 	expectedStatusCode, _ := strconv.Atoi(r.FormValue("status_code"))
-	timeoutSeconds, _ := strconv.Atoi(r.FormValue("timeout"))
+	timeoutSeconds, _ := strconv.Atoi(r.FormValue("timeout_seconds"))
 
-	// Non-Empty URL validation
 	if url == "" {
 		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
 		return
@@ -70,7 +69,6 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
-
 	// Validate Frequency
 	if frequencyMinutes <= 0 {
 		http.Error(w, "Frequency must be greater than zero", http.StatusBadRequest)
@@ -87,12 +85,11 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 		Url:                url,
 		FrequencyMinutes:   frequencyMinutes,
 		LastChecked:        time.Now().UTC().Truncate(time.Minute),
-		ExpectedStatusCode: expectedStatusCode, // | 200 is not needed
+		ExpectedStatusCode: expectedStatusCode,
 		Status:             models.StatusUnknown,
-		TimeoutSeconds:     timeoutSeconds, // | 5 is not needed
+		TimeoutSeconds:     timeoutSeconds,
 	}
 
-	// Store in DB via service
 	entityId, err := uh.urlService.CreateUrl(urlMonitor)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to create URL: %v", err), http.StatusInternalServerError)
@@ -102,21 +99,6 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Successfully created a monitor with id: ", entityId)
 
 	uh.templateManager.Render(w, "monitor-item", urlMonitor)
-	// Previous JSON decoder (not needed for HTMX form submissions)
-	// var req CreateURLRequest
-	// decoder := json.NewDecoder(r.Body)
-	// if err := decoder.Decode(&req); err != nil {
-	// 	http.Error(w, fmt.Sprintf("Failed to parse request: %v", err), http.StatusBadRequest)
-	// 	return
-	// }
-
-	// res := utils.JSONResponse{
-	// 	Message: "Created URL entry successfully!",
-	// 	Data:    map[string]any{"entityId": entityId},
-	// }
-
-	// utils.SendJSONResponse(w, http.StatusCreated, res)
-
 }
 
 func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
@@ -129,16 +111,10 @@ func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch URL Monitors %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
+		return
 	}
 
-	// res := utils.JSONResponse{
-	// 	Message: "Fetch URL monitors successfully",
-	// 	Data:    map[string]any{"monitors": values},
-	// }
-
 	uh.templateManager.Render(w, "monitor-list.html", values)
-	// //json response
-	// utils.SendJSONResponse(w, http.StatusAccepted, res)
 }
 
 func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +139,5 @@ func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
 			"monitor": monitor,
 		},
 	}
-
 	utils.SendJSONResponse(w, http.StatusOK, res)
-
 }

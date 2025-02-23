@@ -1,5 +1,7 @@
 {{define "monitor-item"}}
 <div 
+  hx-get="/api/monitors/{{.ID}}/stats"
+  hx-target="#stat-summary"
   class="bg-gray-900 border 
     {{if eq .Status "UP"}}border-emerald-500 
     {{else if or (eq .Status "DOWN") (eq .Status "TIMEOUT")}} border-red-500 

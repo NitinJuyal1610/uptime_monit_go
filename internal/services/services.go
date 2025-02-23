@@ -7,7 +7,8 @@ import (
 
 // hold all services
 type Services struct {
-	UrlService *UrlService
+	UrlService  *UrlService
+	StatService *StatService
 }
 
 func NewServices(db *sql.DB) *Services {
@@ -15,8 +16,10 @@ func NewServices(db *sql.DB) *Services {
 	urlRepo := repository.NewUrlRepository(db)
 	statRepo := repository.NewStatRepository(db)
 	urlService := NewUrlService(urlRepo, statRepo)
+	statService := NewStatsService(statRepo)
 
 	return &Services{
-		UrlService: urlService,
+		UrlService:  urlService,
+		StatService: statService,
 	}
 }
