@@ -1,3 +1,4 @@
-{{range .}} {{template "monitor-item" .}} {{else}}
+{{range $index, $monitor := .}} {{template "monitor-item" (dict "Index" $index
+"Monitor" $monitor)}} {{else}}
 <p class="text-gray-400 text-center">No monitors found.</p>
 {{end}}

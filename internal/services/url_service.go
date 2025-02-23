@@ -100,7 +100,7 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 		return nil
 	}
 
-	urlStats := make([]*models.UrlStats, len(allStats))
+	monitorChecks := make([]*models.MonitorCheck, len(allStats))
 	for i, raw := range allStats {
 
 		var status models.Status
@@ -117,7 +117,7 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 			status = models.StatusUnknown
 		}
 
-		urlStats[i] = &models.UrlStats{
+		monitorChecks[i] = &models.MonitorCheck{
 			MonitorId:    raw.MonitorId,
 			StatusCode:   raw.StatusCode,
 			ResponseTime: raw.ResponseTime.Seconds(),
@@ -125,7 +125,7 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 		}
 
 		//update last
-		err := us.urlRepo.Update(urlStats[i].MonitorId, &models.UrlMonitors{
+		err := us.urlRepo.Update(monitorChecks[i].MonitorId, &models.UrlMonitors{
 			LastChecked: time.Now().UTC().Truncate(time.Minute),
 			Status:      status,
 		})
@@ -134,7 +134,7 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 		}
 	}
 
-	_, err := us.statRepo.BulkCreate(urlStats)
+	_, err := us.statRepo.BulkCreate(monitorChecks)
 	if err != nil {
 		return fmt.Errorf("failed to save stats to DB: %w", err)
 	}

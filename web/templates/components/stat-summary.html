@@ -1,27 +1,43 @@
-<div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl p-6">
-  <div class="flex items-center justify-between mb-6">
+<div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-xl p-6">
+  <div class="flex flex-wrap items-center justify-between mb-6">
     <div>
-      <h2 class="text-xl font-bold text-white">Description {{.}}</h2>
-      <p class="text-gray-400">https://example.com</p>
+      <h2 class="text-2xl font-semibold text-white">Service Status</h2>
+      <p class="text-gray-400 text-sm">{{ .Url }}</p>
+    </div>
+    
+    <div class="px-4 py-2 rounded-lg text-white text-sm font-medium
+      {{ if eq .Status "UP" }} bg-emerald-500
+      {{ else if eq .Status "SLOW" }} bg-yellow-500
+      {{ else if eq .Status "TIMEOUT" }} bg-orange-500
+      {{ else if or (eq .Status "ERROR") (eq .Status "SSL_ERROR") }} bg-red-500
+      {{ else if or (eq .Status "DOWN") (eq .Status "DNS_FAILURE") }} bg-red-600
+      {{ else if or (eq .Status "UNKNOWN") (eq .Status "PAUSED") }} bg-gray-500
+      {{ else if eq .Status "PENDING" }} bg-blue-500
+      {{ else if eq .Status "DELETED" }} bg-gray-700
+      {{else }} bg-gray-700
+      {{ end }}">
+      Status: {{ if .Status }} {{.Status}}{{else}} UNKNOWN {{end}}
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-      <div class="text-sm text-gray-400">Response Time</div>
-      <div class="text-2xl font-bold text-white">127 ms</div>
+      <div class="text-sm text-gray-400">Avg Response Time</div>
+      <div class="text-2xl font-semibold text-white">{{ .AvgResponseTime }} ms</div>
     </div>
     <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
       <div class="text-sm text-gray-400">24h Uptime</div>
-      <div class="text-2xl font-bold text-emerald-500">99.9%</div>
+      <div class="text-2xl font-semibold">
+        {{ .DailyUptimePercentage }}%
+      </div>
     </div>
     <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-      <div class="text-sm text-gray-400">30d Uptime</div>
-      <div class="text-2xl font-bold text-emerald-500">99.8%</div>
+      <div class="text-sm text-gray-400">Total Incidents</div>
+      <div class="text-2xl font-semibold text-orange-500">{{ .TotalIncidents }}</div>
     </div>
     <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
       <div class="text-sm text-gray-400">Last Checked</div>
-      <div class="text-2xl font-bold text-white">2m ago</div>
+      <div class="text-2xl font-semibold text-white">{{ .LastChecked }}</div>
     </div>
   </div>
 </div>

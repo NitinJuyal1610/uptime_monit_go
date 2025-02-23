@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type UrlStats struct {
+type MonitorCheck struct {
 	ID           int       `json:"id"`
 	MonitorId    int       `json:"monitor_id"`
 	StatusCode   int       `json:"status_code"`

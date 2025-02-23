@@ -13,7 +13,6 @@ func NewStatsService(statRepo repository.StatRepository) *StatService {
 	return &StatService{statRepo}
 }
 
-func (ss *StatService) GetStats(monitorId int) ([]*models.UrlStats, error) {
-	//TODO LOGIC
+func (ss *StatService) GetStats(monitorId int) (*models.MonitorStats, error) {
 	return ss.statRepo.GetStatsByMonitorId(monitorId)
 }

@@ -24,7 +24,7 @@ func (s *Server) SetupRoutes() http.Handler {
 	r.Post("/api/monitors", urlHandler.CreateURLMonitor)
 	r.Get("/api/monitors", urlHandler.GetURLMonitors)
 	r.Get("/api/monitors/{id}", urlHandler.GetMonitorById)
-	r.Get("/api/monitors/{id}/stats", statHandler.GetUrlStats)
+	r.Get("/api/monitors/{id}/stats", statHandler.GetMonitorStats)
 
 	return r
 }
