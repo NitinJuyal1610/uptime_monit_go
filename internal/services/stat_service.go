@@ -13,6 +13,10 @@ func NewStatsService(statRepo repository.StatRepository) *StatService {
 	return &StatService{statRepo}
 }
 
-func (ss *StatService) GetStats(monitorId int) (*models.MonitorStats, error) {
+func (ss *StatService) GetStatSummary(monitorId int) (*models.MonitorStats, error) {
 	return ss.statRepo.GetStatsByMonitorId(monitorId)
+}
+
+func (ss *StatService) GetAvgResponseData(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error) {
+	return ss.statRepo.GetResponseTimeByDateRange(monitorId, startDate, endDate)
 }

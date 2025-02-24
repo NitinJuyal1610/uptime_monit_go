@@ -7,7 +7,7 @@ import (
 
 func TimeAgo(t time.Time) string {
 	duration := time.Since(t)
-
+	fmt.Printf("time from %v is ", duration)
 	if duration < time.Minute {
 		return "just now"
 	} else if duration < time.Hour {

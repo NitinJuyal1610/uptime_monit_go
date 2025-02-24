@@ -9,6 +9,7 @@ import (
 
 type StatRepository interface {
 	GetStatsByMonitorId(monitorId int) (*models.MonitorStats, error)
+	GetResponseTimeByDateRange(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error)
 	BulkCreate(monitorChecks []*models.MonitorCheck) ([]int, error)
 }
 
@@ -20,11 +21,52 @@ func NewStatRepository(db *sql.DB) StatRepository {
 	return &StatRepositoryPg{db}
 }
 
+func (sr *StatRepositoryPg) GetResponseTimeByDateRange(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error) {
+	rsDateQuery := `
+		SELECT
+			DATE(timestamp) as date,
+			mc.monitor_id ,
+			um.url,
+			COALESCE(ROUND(CAST(AVG(CASE WHEN mc.is_up = true THEN mc.response_time END) AS numeric), 3), 0.0) AS avg_response_time
+		FROM
+			monitor_checks mc
+		INNER JOIN url_monitors um ON
+			um.id = mc.monitor_id
+		WHERE mc.monitor_id = $1 AND DATE(timestamp) BETWEEN $2 AND $3
+		GROUP BY DATE(timestamp), mc.monitor_id , um.url 
+	`
+
+	rows, err := sr.db.Query(rsDateQuery, monitorId, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*models.ResponseTimeStat
+
+	for rows.Next() {
+		var rts models.ResponseTimeStat
+
+		err := rows.Scan(&rts.Date, &rts.MonitorID, &rts.Url, &rts.AvgResponseTime)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &rts)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 func (sr *StatRepositoryPg) GetStatsByMonitorId(monitorId int) (*models.MonitorStats, error) {
 	statsQuery := `
 		WITH hourlyStats AS (
 			SELECT  
-				ROUND(CAST(AVG(CASE WHEN is_up = true THEN response_time END) AS numeric), 2) AS daily_avg_response_time,
+				ROUND(CAST(AVG(CASE WHEN is_up = true THEN response_time END) AS numeric), 3) AS daily_avg_response_time,
 				(COUNT(CASE WHEN is_up THEN 1 END) * 100.0 / COUNT(*)) AS daily_uptime_percentage,
 				monitor_id 
 			FROM monitor_checks
@@ -39,7 +81,7 @@ func (sr *StatRepositoryPg) GetStatsByMonitorId(monitorId int) (*models.MonitorS
 			COUNT(*) AS total_checks,
 			COUNT(*) FILTER (WHERE is_up = true) AS successful_checks,
 			COUNT(*) FILTER (WHERE is_up = false) AS failed_checks,
-			COALESCE(ROUND(CAST(AVG(CASE WHEN is_up = true THEN response_time END) AS numeric), 2), 0.0) AS avg_response_time,
+			COALESCE(ROUND(CAST(AVG(CASE WHEN is_up = true THEN response_time END) AS numeric), 3), 0.0) AS avg_response_time,
 			ROUND(
 				(COUNT(CASE WHEN is_up THEN 1 END) * 100.0 / COUNT(*)), 
 				2

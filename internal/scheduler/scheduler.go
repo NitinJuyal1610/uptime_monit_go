@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"fmt"
 	"log"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 
@@ -19,9 +18,9 @@ func NewScheduler(services *service.Services) *SchedulerService {
 	_, err := sd.cron.AddFunc("* * * * *", func() {
 		log.Println("Running scheduled URL monitoring check...")
 
-		if err := sd.urlService.ProcessDueMonitorURLs(); err != nil {
-			fmt.Println(err)
-		}
+		// if err := sd.urlService.ProcessDueMonitorURLs(); err != nil {
+		// 	fmt.Println(err)
+		// }
 	})
 
 	if err != nil {
