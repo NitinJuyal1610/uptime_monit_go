@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
@@ -72,7 +73,7 @@ func (s *StatHandler) GetMonitorStats(w http.ResponseWriter, r *http.Request) {
 	s.templateManager.Render(w, "stat-summary.html", res)
 }
 
-func (s *StatHandler) GetAvgResponseData(w http.ResponseWriter, r *http.Request) {
+func (s *StatHandler) GetAvgResponseGraph(w http.ResponseWriter, r *http.Request) {
 	startDate := r.URL.Query().Get("startDate")
 	endDate := r.URL.Query().Get("endDate")
 
@@ -89,12 +90,20 @@ func (s *StatHandler) GetAvgResponseData(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-	results, err := s.statService.GetAvgResponseData(monitorId, startDate, endDate)
+	lineSnippet, err := s.statService.GetAvgResponseGraph(monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch monitor stats %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
 		return
 	}
 
-	s.templateManager.Render(w, "stat-summary.html", results)
+	data := struct {
+		Element template.HTML
+		Script  template.HTML
+	}{
+		Element: template.HTML(lineSnippet.Element),
+		Script:  template.HTML(lineSnippet.Script),
+	}
+
+	s.templateManager.Render(w, "chart-container.html", data)
 }

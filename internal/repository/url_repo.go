@@ -13,6 +13,7 @@ type UrlRepository interface {
 	GetById(id int) (*models.UrlMonitors, error)
 	GetDueMonitorURLs() ([]*models.UrlMonitors, error)
 	Update(id int, urlMonitor *models.UrlMonitors) error
+	BulkUpdate(updates map[int]*models.UrlMonitors) error
 }
 
 type UrlRepositoryPg struct {
@@ -276,6 +277,69 @@ func (u *UrlRepositoryPg) Update(id int, urlMonitor *models.UrlMonitors) error {
 	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("no records updated, possibly due to no changes")
+	}
+
+	return nil
+}
+
+func (u *UrlRepositoryPg) BulkUpdate(updates map[int]*models.UrlMonitors) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	var placeholderValues []any
+	var queryParts []string
+	var monitorIDs []int
+
+	paramIndex := 2
+	for monitorID, update := range updates {
+		queryParts = append(queryParts, fmt.Sprintf("WHEN $%d THEN $%d", paramIndex, paramIndex+1))
+		placeholderValues = append(placeholderValues, monitorID, update.Status)
+		monitorIDs = append(monitorIDs, monitorID)
+		paramIndex += 2
+
+	}
+
+	if len(monitorIDs) == 0 {
+		return nil
+	}
+
+	wherePlaceholders := make([]string, len(monitorIDs))
+	for i := range monitorIDs {
+		wherePlaceholders[i] = fmt.Sprintf("$%d", paramIndex+i)
+	}
+
+	query := fmt.Sprintf(`
+        UPDATE url_monitors
+        SET 
+            last_checked = $1,
+            status = CASE id %s ELSE status END
+        WHERE id IN (%s)
+    `,
+		strings.Join(queryParts, " "),
+		strings.Join(wherePlaceholders, ", "),
+	)
+
+	firstMonitor := updates[monitorIDs[0]]
+	allParams := []any{firstMonitor.LastChecked}
+
+	allParams = append(allParams, placeholderValues...)
+	for _, id := range monitorIDs {
+		allParams = append(allParams, id)
+	}
+
+	result, err := u.db.Exec(query, allParams...)
+	if err != nil {
+		return fmt.Errorf("failed to perform bulk update: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error getting rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("no rows were updated")
 	}
 
 	return nil

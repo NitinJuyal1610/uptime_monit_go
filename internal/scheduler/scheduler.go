@@ -24,6 +24,7 @@ func NewScheduler(services *service.Services) *SchedulerService {
 	})
 
 	if err != nil {
+
 		log.Fatalf("Failed to schedule URL monitoring task: %v", err)
 	}
 	return sd

@@ -89,57 +89,82 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 }
 
 func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
+	const batchSize = 100
+	for {
+		batch := make([]*RawStats, 0, batchSize)
 
-	var allStats []*RawStats
+		for range batchSize {
 
-	for s := range statChan {
-		allStats = append(allStats, s)
+			stat, ok := <-statChan
+			if !ok {
+				// Channel closed
+				break
+			}
+			batch = append(batch, stat)
+		}
+
+		if len(batch) == 0 {
+			break // No more stats
+		}
+
+		if err := us.processBatch(batch); err != nil {
+			return fmt.Errorf("failed to process batch: %w", err)
+		}
 	}
 
-	if len(allStats) == 0 {
+	return nil
+}
+
+func (us *UrlService) processBatch(batch []*RawStats) error {
+	if len(batch) == 0 {
 		return nil
 	}
 
-	monitorChecks := make([]*models.MonitorCheck, len(allStats))
-	for i, raw := range allStats {
+	monitorChecks := make([]*models.MonitorCheck, len(batch))
+	monitorUpdates := make(map[int]*models.UrlMonitors)
 
-		var status models.Status
-		switch {
-		case raw.IsUp && raw.StatusCode == raw.ExpectedStatusCode:
-			status = models.StatusUp
-		case raw.IsUp && raw.StatusCode != raw.ExpectedStatusCode:
-			status = models.StatusError
-		case !raw.IsUp && raw.StatusCode == http.StatusRequestTimeout:
-			status = models.StatusTimeout
-		case !raw.IsUp:
-			status = models.StatusDown
-		default:
-			status = models.StatusUnknown
-		}
+	currentTime := time.Now().UTC().Truncate(time.Minute)
+	for i, raw := range batch {
+		status := determineStatus(raw)
 
 		monitorChecks[i] = &models.MonitorCheck{
 			MonitorId:    raw.MonitorId,
 			StatusCode:   raw.StatusCode,
 			ResponseTime: raw.ResponseTime.Seconds(),
 			IsUp:         raw.IsUp,
+			Timestamp:    currentTime,
 		}
 
-		//update last
-		err := us.urlRepo.Update(monitorChecks[i].MonitorId, &models.UrlMonitors{
-			LastChecked: time.Now().UTC().Truncate(time.Minute),
+		monitorUpdates[raw.MonitorId] = &models.UrlMonitors{
+			LastChecked: currentTime,
 			Status:      status,
-		})
-		if err != nil {
-			return fmt.Errorf("failed to update timestamp: %v", err)
 		}
 	}
 
-	_, err := us.statRepo.BulkCreate(monitorChecks)
-	if err != nil {
+	if _, err := us.statRepo.BulkCreate(monitorChecks); err != nil {
 		return fmt.Errorf("failed to save stats to DB: %w", err)
 	}
 
+	if err := us.urlRepo.BulkUpdate(monitorUpdates); err != nil {
+		return fmt.Errorf("failed to update monitors: %w", err)
+	}
+
 	return nil
+}
+
+func determineStatus(raw *RawStats) models.Status {
+	switch {
+	case raw.IsUp && raw.StatusCode == raw.ExpectedStatusCode:
+		return models.StatusUp
+	case raw.IsUp && raw.StatusCode != raw.ExpectedStatusCode:
+		return models.StatusError
+	case !raw.IsUp && raw.StatusCode == http.StatusRequestTimeout:
+		return models.StatusTimeout
+	case !raw.IsUp:
+		return models.StatusDown
+	default:
+		return models.StatusUnknown
+	}
 }
 
 func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string) (*RawStats, error) {

@@ -129,7 +129,7 @@ func (sr *StatRepositoryPg) BulkCreate(monitorChecks []*models.MonitorCheck) ([]
 	}
 
 	valueStrings := make([]string, len(monitorChecks))
-	valueArgs := make([]interface{}, 0, len(monitorChecks)*4)
+	valueArgs := make([]any, 0, len(monitorChecks)*4)
 
 	for i, stat := range monitorChecks {
 		timeSeconds := stat.ResponseTime
