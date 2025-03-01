@@ -98,7 +98,11 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Successfully created a monitor with id: ", entityId)
 
-	uh.templateManager.Render(w, "monitor-item", urlMonitor)
+	urlMonitor.ID = entityId
+	data := map[string]any{
+		"Monitor": urlMonitor,
+	}
+	uh.templateManager.Render(w, "monitor-item", data)
 }
 
 func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {

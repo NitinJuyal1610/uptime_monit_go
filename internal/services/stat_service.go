@@ -23,6 +23,10 @@ func (ss *StatService) GetStatSummary(monitorId int) (*models.MonitorStats, erro
 }
 
 func formatTimeData(data []*models.ResponseTimeStat) ([]opts.LineData, []string) {
+
+	if len(data) == 0 {
+		return []opts.LineData{{Value: 0}}, []string{"No Data"}
+	}
 	items := make([]opts.LineData, 0, len(data))
 	keys := make([]string, 0, len(data))
 	for _, d := range data {
@@ -45,9 +49,10 @@ func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endD
 	lineChart := charts.NewLine()
 	lineChart.SetGlobalOptions(
 		charts.WithInitializationOpts(opts.Initialization{
-			Theme:  "dark",
-			Width:  "900px",
-			Height: "500px",
+			Theme:           "dark",
+			Width:           "100%",
+			Height:          "400px",
+			BackgroundColor: "#111827",
 		}),
 		charts.WithTitleOpts(opts.Title{
 			Title:    "API Response Time Trend",
@@ -55,11 +60,14 @@ func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endD
 			Left:     "center",
 			TitleStyle: &opts.TextStyle{
 				FontSize: 18,
+				Color:    "#E5E7EB",
 			},
 		}),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "axis",
-			Formatter: opts.FuncOpts(`function (params) {let tooltipText = '';
+
+			Formatter: opts.FuncOpts(`function (params) {
+				let tooltipText = '';
 				params.forEach((item) => {
 					tooltipText += item.marker + ' <strong>' + item.seriesName + '</strong>: ' + item.value + ' ms<br>';
 				});
@@ -73,14 +81,15 @@ func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endD
 			},
 		}),
 		charts.WithLegendOpts(opts.Legend{
-			Show: opts.Bool(true),
-			Left: "right",
+			Show:      opts.Bool(true),
+			Left:      "right",
+			TextStyle: &opts.TextStyle{Color: "#E5E7EB"},
 		}),
 		charts.WithXAxisOpts(opts.XAxis{
 			Type:      "category",
 			Name:      "Date",
-			NameGap:   30,
-			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true)},
+			NameGap:   10,
+			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Color: "#E5E7EB"},
 			SplitLine: &opts.SplitLine{Show: opts.Bool(false)},
 		}),
 		charts.WithYAxisOpts(opts.YAxis{
@@ -88,15 +97,16 @@ func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endD
 			Name:      "Response Time (ms)",
 			NameGap:   30,
 			Min:       0,
-			SplitLine: &opts.SplitLine{Show: opts.Bool(true)},
+			SplitLine: &opts.SplitLine{Show: opts.Bool(true), LineStyle: &opts.LineStyle{Color: "#374151"}},
 			AxisLabel: &opts.AxisLabel{
 				Formatter: "{value} ms",
+				Color:     "#E5E7EB",
 			},
 		}),
 		charts.WithGridOpts(opts.Grid{
-			Left:         "5%",
+			Left:         "3%",
 			Right:        "5%",
-			Bottom:       "15%",
+			Bottom:       "10%",
 			Top:          "15%",
 			ContainLabel: opts.Bool(true),
 		}),
@@ -118,5 +128,6 @@ func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endD
 				Opacity: 0.4,
 			}),
 		)
+
 	return lineChart.RenderSnippet(), nil
 }

@@ -1,8 +1,6 @@
 {{define "monitor-item"}}
 <div 
-  hx-get="/api/monitors/{{.Monitor.ID}}/stats"
-  hx-target="#stat-summary"
-  hx-trigger="{{if eq .Index 0}}load,{{end}} click"
+  id="monitor-{{.Monitor.ID}}"
   class="bg-gray-900 border 
     {{if eq .Monitor.Status "UP"}}border-emerald-500 
     {{else if or (eq .Monitor.Status "DOWN") (eq .Monitor.Status "TIMEOUT")}} border-red-500 
@@ -29,6 +27,20 @@
     <span class="flex items-center gap-1">
       ⏱ <span>Timeout: {{.Monitor.TimeoutSeconds}}s</span>
     </span>
+  </div>
+
+  <!-- First API call -->
+  <div 
+    hx-get="/api/monitors/{{.Monitor.ID}}/stats"
+    hx-target="#stat-summary"
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+  </div>
+  
+  <!-- Second API call -->
+  <div
+    hx-get="/api/monitors/{{.Monitor.ID}}/avg-response-data"
+    hx-target="#uptime-chart"
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
   </div>
 </div>
 {{end}}
