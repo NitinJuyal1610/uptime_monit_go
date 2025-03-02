@@ -31,6 +31,7 @@ func New() (*Server, *http.Server) {
 		db:       db,
 		Services: svcs,
 	}
+
 	//----
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%d", srv.port),

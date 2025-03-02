@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Dark background circle -->
+  <circle cx="32" cy="32" r="30" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+  
+  <!-- Pulse rings -->
+  <circle cx="32" cy="32" r="24" fill="none" stroke="#10b981" stroke-width="2" opacity="0.2">
+    <animate attributeName="r" from="18" to="24" dur="1.5s" begin="0s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" begin="0s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="32" cy="32" r="20" fill="none" stroke="#10b981" stroke-width="2" opacity="0.3">
+    <animate attributeName="r" from="14" to="20" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Uptime check mark -->
+  <path d="M22 32l8 8 16-16" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <animate attributeName="stroke-dasharray" from="0 60" to="60 60" dur="0.8s" begin="0s" fill="freeze"/>
+  </path>
+  
+  <!-- Status dot -->
+  <circle cx="32" cy="32" r="8" fill="#10b981">
+    <animate attributeName="fill-opacity" values="1;0.8;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
