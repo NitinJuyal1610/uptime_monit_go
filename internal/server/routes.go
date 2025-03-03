@@ -25,7 +25,10 @@ func (s *Server) SetupRoutes() http.Handler {
 	r.Get("/api/monitors", urlHandler.GetURLMonitors)
 	r.Get("/api/monitors/{id}", urlHandler.GetMonitorById)
 	r.Get("/api/monitors/{id}/stats", statHandler.GetMonitorStats)
-	r.Get("/api/monitors/{id}/avg-response-data", statHandler.GetAvgResponseGraph)
+	r.Get("/api/monitors/{id}/avg-response-graph", statHandler.GetAvgResponseGraph)
+	r.Get("/api/monitors/{id}/stats", statHandler.GetMonitorStats)
+	r.Get("/api/monitors/{id}/uptime-graph", statHandler.GetUptimeGraph)
+	// r.Get("/api/monitors/{id}/ttfb-graph", statHandler.GetTTFBGraph)
 
 	return r
 }

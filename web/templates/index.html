@@ -115,34 +115,27 @@
                 >
               </div>
 
-              <div hx-ext="path-params">
-                <button
-                  id="apply-filters"
-                  class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm rounded-lg transition-colors flex items-center space-x-2"
-                  hx-get="/api/monitors/{itemId}/avg-response-data"
-                  hx-include="[name='start_date'], [name='end_date']"
-                  hx-trigger="click"
-                  hx-swap="innerHTML"
-                  hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
-                  hx-target="#avg-response-chart"
+              <!-- Button -->
+              <button
+                id="apply-filters"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-sm rounded-lg transition-colors flex items-center space-x-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>Apply</span>
-                </button>
-              </div>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Apply</span>
+              </button>
             </div>
 
             <div class="grid grid-cols-4 gap-3">
@@ -213,11 +206,37 @@
           </div>
           <div
             id="graph-container"
+            hx-ext="path-params"
             class="mt-6 p-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl w-full transition-transform duration-300 ease-in-out hover:translate-y-[-10px] hover:shadow-2xl transform hover:scale-[1.02]"
           >
             <div
               class="relative w-full h-64 md:h-80 lg:h-96"
               id="avg-response-chart"
+              hx-get="/api/monitors/{itemId}/avg-response-graph"
+              hx-include="[name='start_date'], [name='end_date']"
+              hx-trigger="click from:#apply-filters"
+              hx-swap="innerHTML"
+              hx-target="#avg-response-chart"
+              hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
+            >
+              <!-- response time graph -->
+            </div>
+          </div>
+
+          <div
+            id="graph-container"
+            hx-ext="path-params"
+            class="mt-6 p-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl w-full transition-transform duration-300 ease-in-out hover:translate-y-[-10px] hover:shadow-2xl transform hover:scale-[1.02]"
+          >
+            <div
+              class="relative w-full h-64 md:h-80 lg:h-96"
+              hx-get="/api/monitors/{itemId}/uptime-graph"
+              hx-include="[name='start_date'], [name='end_date']"
+              hx-trigger="click from:#apply-filters"
+              hx-swap="innerHTML"
+              hx-target="#uptime-chart"
+              hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
+              id="uptime-chart"
             >
               <!-- response time graph -->
             </div>

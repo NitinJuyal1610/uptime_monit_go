@@ -9,8 +9,9 @@ import (
 
 type StatRepository interface {
 	GetStatsByMonitorId(monitorId int) (*models.MonitorStats, error)
-	GetResponseTimeByDateRange(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error)
+	GetAvgResponseData(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error)
 	BulkCreate(monitorChecks []*models.MonitorCheck) ([]int, error)
+	GetUptimeData(monitorId int, startDate string, endDate string) ([]*models.UptimeStat, error)
 }
 
 type StatRepositoryPg struct {
@@ -21,7 +22,7 @@ func NewStatRepository(db *sql.DB) StatRepository {
 	return &StatRepositoryPg{db}
 }
 
-func (sr *StatRepositoryPg) GetResponseTimeByDateRange(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error) {
+func (sr *StatRepositoryPg) GetAvgResponseData(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error) {
 	rsDateQuery := `
 		SELECT
 			DATE(timestamp) as date,
@@ -53,6 +54,51 @@ func (sr *StatRepositoryPg) GetResponseTimeByDateRange(monitorId int, startDate 
 		}
 
 		results = append(results, &rts)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+func (sr *StatRepositoryPg) GetUptimeData(monitorId int, startDate string, endDate string) ([]*models.UptimeStat, error) {
+
+	uptimeQuery := `
+		SELECT
+			COUNT(*) FILTER (WHERE is_up = true) AS successful_checks,
+			COUNT(*) FILTER (WHERE is_up = false) AS failed_checks,
+			COALESCE (ROUND(
+				(COUNT(CASE WHEN is_up THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2
+			),0) AS uptime_percentage,
+			DATE(mc.timestamp) as date,
+			um.url
+		FROM monitor_checks mc
+		INNER JOIN url_monitors um on um.id = mc.monitor_id
+		WHERE mc.monitor_id = $1 
+			AND DATE(mc.timestamp) BETWEEN $2 AND $3
+		GROUP BY DATE(mc.timestamp),um.url
+	`
+
+	rows, err := sr.db.Query(uptimeQuery, monitorId, startDate, endDate)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*models.UptimeStat
+
+	for rows.Next() {
+		var uts models.UptimeStat
+
+		err := rows.Scan(&uts.SuccessfulChecks, &uts.FailedChecks, &uts.UptimePercentage, &uts.Date, &uts.Url)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &uts)
 	}
 
 	if err := rows.Err(); err != nil {

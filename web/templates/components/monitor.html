@@ -46,8 +46,16 @@ class="monitor-item bg-gray-900 border
 
 <!-- Second API call -->
 <div
-  hx-get="/api/monitors/{{.Monitor.ID}}/avg-response-data"
+  hx-get="/api/monitors/{{.Monitor.ID}}/avg-response-graph"
   hx-target="#avg-response-chart"
+  hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+</div>
+
+
+<!-- Second API call -->
+<div
+  hx-get="/api/monitors/{{.Monitor.ID}}/uptime-graph"
+  hx-target="#uptime-chart"
   hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
 </div>
 </div>
