@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
 	"strings"
@@ -42,6 +43,7 @@ func formatTimeData(data []*models.ResponseTimeStat) ([]opts.LineData, []string)
 func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
 	responseInfo, err := ss.statRepo.GetResponseTimeByDateRange(monitorId, startDate, endDate)
 
+	fmt.Println(monitorId, startDate, endDate, "--req")
 	if err != nil {
 		return render.ChartSnippet{}, err
 	}

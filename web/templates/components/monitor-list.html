@@ -1,4 +1,8 @@
-{{range $index, $monitor := .}} {{template "monitor-item" (dict "Index" $index
-"Monitor" $monitor)}} {{else}}
+{{if .}} {{$firstMonitor := index . 0}}
+<script>
+  selectedMonitorId = '{{$firstMonitor.ID}}';
+</script>
+{{end}} {{range $index, $monitor := .}} {{template "monitor-item" (dict "Index"
+$index "Monitor" $monitor)}} {{else}}
 <p class="text-gray-400 text-center">No monitors found.</p>
 {{end}}

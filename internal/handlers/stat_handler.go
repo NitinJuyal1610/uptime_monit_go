@@ -74,22 +74,38 @@ func (s *StatHandler) GetMonitorStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *StatHandler) GetAvgResponseGraph(w http.ResponseWriter, r *http.Request) {
-	startDate := r.URL.Query().Get("startDate")
-	endDate := r.URL.Query().Get("endDate")
+	idStr := chi.URLParam(r, "id")
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	dayStr := r.URL.Query().Get("days")
 
-	// If startDate or endDate is not provided, set default to last 30 days
+	monitorId, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid monitor ID", http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now()
+	var days int
+
+	if dayStr != "" {
+		days, err = strconv.Atoi(dayStr)
+		if err != nil {
+			http.Error(w, "Invalid days parameter", http.StatusBadRequest)
+			return
+		}
+	}
+
 	if startDate == "" || endDate == "" {
-		now := time.Now()
 		endDate = now.Format("2006-01-02")
 		startDate = now.AddDate(0, 0, -30).Format("2006-01-02")
 	}
 
-	idStr := chi.URLParam(r, "id")
-	monitorId, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Invalid ID", http.StatusBadRequest)
-		return
+	if dayStr != "" {
+		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
+
+	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
 	lineSnippet, err := s.statService.GetAvgResponseGraph(monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch monitor stats %v", err)
