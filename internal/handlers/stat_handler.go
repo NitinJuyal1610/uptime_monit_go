@@ -105,7 +105,6 @@ func (s *StatHandler) GetAvgResponseGraph(w http.ResponseWriter, r *http.Request
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
 	lineSnippet, err := s.statService.GetAvgResponseGraph(monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch average response graph %v", err)

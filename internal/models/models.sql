@@ -18,6 +18,8 @@ CREATE TABLE monitor_checks (
     status_code INTEGER,
     response_time FLOAT,
     is_up BOOLEAN,
+    ttfb FLOAT,
+    content_size INTEGER,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

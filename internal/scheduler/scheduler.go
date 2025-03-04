@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"fmt"
 	"log"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 
@@ -14,20 +13,19 @@ type SchedulerService struct {
 }
 
 func NewScheduler(services *service.Services) *SchedulerService {
+
 	sd := &SchedulerService{urlService: services.UrlService, cron: cron.New()}
 
-	_, err := sd.cron.AddFunc("* * * * *", func() {
-		log.Println("Running scheduled URL monitoring check...")
+	// _, err := sd.cron.AddFunc("CRON_TZ=UTC * * * * *", func() {
+	// 	log.Println("Running scheduled URL monitoring check...")
+	// 	if err := sd.urlService.ProcessDueMonitorURLs(); err != nil {
+	// 		fmt.Println(err)
+	// 	}
+	// })
 
-		if err := sd.urlService.ProcessDueMonitorURLs(); err != nil {
-			fmt.Println(err)
-		}
-	})
-
-	if err != nil {
-
-		log.Fatalf("Failed to schedule URL monitoring task: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Failed to schedule URL monitoring task: %v", err)
+	// }
 	return sd
 }
 

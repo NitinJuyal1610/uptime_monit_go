@@ -60,7 +60,6 @@ func formatUptimeData(data []*models.UptimeStat) ([]opts.LineData, []string) {
 func (ss *StatService) GetAvgResponseGraph(monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
 	responseInfo, err := ss.statRepo.GetAvgResponseData(monitorId, startDate, endDate)
 
-	fmt.Println(monitorId, startDate, endDate, "--req")
 	if err != nil {
 		return render.ChartSnippet{}, err
 	}

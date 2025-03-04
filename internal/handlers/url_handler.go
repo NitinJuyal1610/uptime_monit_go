@@ -58,7 +58,7 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 	frequencyMinutes, _ := strconv.Atoi(r.FormValue("frequency_minutes"))
 	expectedStatusCode, _ := strconv.Atoi(r.FormValue("status_code"))
 	timeoutSeconds, _ := strconv.Atoi(r.FormValue("timeout_seconds"))
-
+	collectDetailedDate, _ := strconv.ParseBool(r.FormValue("collect_detailed_data"))
 	if url == "" {
 		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
 		return
@@ -82,12 +82,13 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 
 	// Create URL monitor object
 	urlMonitor := &models.UrlMonitors{
-		Url:                url,
-		FrequencyMinutes:   frequencyMinutes,
-		LastChecked:        time.Now().UTC().Truncate(time.Minute),
-		ExpectedStatusCode: expectedStatusCode,
-		Status:             models.StatusUnknown,
-		TimeoutSeconds:     timeoutSeconds,
+		Url:                 url,
+		FrequencyMinutes:    frequencyMinutes,
+		LastChecked:         time.Now().UTC().Truncate(time.Minute),
+		ExpectedStatusCode:  expectedStatusCode,
+		Status:              models.StatusUnknown,
+		TimeoutSeconds:      timeoutSeconds,
+		CollectDetailedData: collectDetailedDate || false,
 	}
 
 	entityId, err := uh.urlService.CreateUrl(urlMonitor)

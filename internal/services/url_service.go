@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptrace"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
 	"sync"
@@ -20,6 +22,8 @@ type UrlService struct {
 type RawStats struct {
 	StatusCode         int           `json:"status_code"`
 	ResponseTime       time.Duration `json:"response_time"`
+	Ttfb               time.Duration `json:"ttfb"`
+	ContentSize        int64         `json:"content_size"`
 	IsUp               bool          `json:"is_up"`
 	MonitorId          int           `json:"monitor_id"`
 	ExpectedStatusCode int           `json:"expected_status_code"`
@@ -31,6 +35,7 @@ func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRep
 			MaxIdleConns:        100,
 			MaxIdleConnsPerHost: 10,
 			IdleConnTimeout:     90 * time.Second,
+			DisableKeepAlives:   true,
 		},
 		Timeout: 10 * time.Second,
 	}
@@ -63,7 +68,7 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 	var wg sync.WaitGroup
 	for _, url := range urls {
 		wg.Add(1)
-		go func(targetUrl string, monitorId int, expectedStatusCode int) {
+		go func(targetUrl string, monitorId int, expectedStatusCode int, collectDetailedData bool) {
 			//semaphore increment
 			limitChan <- true
 			defer func() {
@@ -72,11 +77,11 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(url.TimeoutSeconds)*time.Second)
 			defer cancel()
 			defer wg.Done()
-			stats, _ := us.fetchStatsFromUrl(ctx, targetUrl)
+			stats, _ := us.fetchStatsFromUrl(ctx, targetUrl, collectDetailedData)
 			stats.MonitorId = monitorId
 			stats.ExpectedStatusCode = expectedStatusCode
 			statChan <- stats
-		}(url.Url, url.ID, url.ExpectedStatusCode)
+		}(url.Url, url.ID, url.ExpectedStatusCode, url.CollectDetailedData)
 	}
 
 	go func() {
@@ -92,9 +97,7 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 	const batchSize = 100
 	for {
 		batch := make([]*RawStats, 0, batchSize)
-
 		for range batchSize {
-
 			stat, ok := <-statChan
 			if !ok {
 				// Channel closed
@@ -102,16 +105,13 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 			}
 			batch = append(batch, stat)
 		}
-
 		if len(batch) == 0 {
 			break // No more stats
 		}
-
 		if err := us.processBatch(batch); err != nil {
 			return fmt.Errorf("failed to process batch: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -133,6 +133,11 @@ func (us *UrlService) processBatch(batch []*RawStats) error {
 			ResponseTime: raw.ResponseTime.Seconds(),
 			IsUp:         raw.IsUp,
 			Timestamp:    currentTime,
+		}
+
+		if raw.Ttfb != 0 {
+			monitorChecks[i].Ttfb = raw.Ttfb.Seconds()
+			monitorChecks[i].ContentSize = raw.ContentSize
 		}
 
 		monitorUpdates[raw.MonitorId] = &models.UrlMonitors{
@@ -167,20 +172,30 @@ func determineStatus(raw *RawStats) models.Status {
 	}
 }
 
-func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string) (*RawStats, error) {
+func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collectDetailedData bool) (*RawStats, error) {
 	var (
 		start        = time.Now()
 		responseTime time.Duration
+		ttfb         time.Duration
+		contentSize  int64
 		statusCode   int
 	)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	method := http.MethodHead
+	trace := httptrace.ClientTrace{
+		GotFirstResponseByte: func() {
+			ttfb = time.Since(start)
+		},
+	}
+	if collectDetailedData {
+		method = http.MethodGet
+	}
+	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(ctx, &trace), method, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	resp, err := us.httpClient.Do(req)
-	responseTime = time.Since(start)
 
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
@@ -200,16 +215,25 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string) (*RawSt
 			IsUp:         false,
 		}, err
 	}
-
 	defer resp.Body.Close()
 
+	var rawStats = &RawStats{}
+	if collectDetailedData {
+		//copy body
+		writtenBytes, err := io.Copy(io.Discard, resp.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		contentSize = writtenBytes
+		rawStats.ContentSize = contentSize
+		rawStats.Ttfb = ttfb
+	}
+	responseTime = time.Since(start)
 	statusCode = resp.StatusCode
 
-	rawStats := &RawStats{
-		StatusCode:   statusCode,
-		ResponseTime: responseTime,
-		IsUp:         statusCode >= 200 && statusCode < 400,
-	}
+	rawStats.StatusCode = statusCode
+	rawStats.ResponseTime = responseTime
+	rawStats.IsUp = (statusCode >= 200 && statusCode < 400)
 
 	fmt.Printf("Raw stats %s -> %+v\n", url, rawStats)
 	return rawStats, nil

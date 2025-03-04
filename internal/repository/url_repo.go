@@ -33,7 +33,8 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 		status, 
 		timeout_seconds, 
 		last_checked, 
-		expected_status_code
+		expected_status_code,
+		collect_detailed_data
 	) 
 	VALUES ($1, $2, $3, $4, $5, $6) 
 	RETURNING id
@@ -47,6 +48,7 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 		urlMonitor.TimeoutSeconds,
 		urlMonitor.LastChecked,
 		urlMonitor.ExpectedStatusCode,
+		urlMonitor.CollectDetailedData,
 	).Scan(&entityId)
 
 	if err != nil {
@@ -60,7 +62,7 @@ func (u *UrlRepositoryPg) GetAll(status string, keyword string) ([]*models.UrlMo
 	query := `
 		SELECT 
 			id, REGEXP_REPLACE(url, '^https?://', '', 'i') AS trimmed_url, status, frequency_minutes, timeout_seconds, 
-			last_checked, expected_status_code, created_at, updated_at 
+			last_checked, expected_status_code,collect_detailed_data created_at, updated_at 
 		FROM url_monitors`
 
 	var args []any
@@ -97,6 +99,7 @@ func (u *UrlRepositoryPg) GetAll(status string, keyword string) ([]*models.UrlMo
 			&monitor.TimeoutSeconds,
 			&monitor.LastChecked,
 			&monitor.ExpectedStatusCode,
+			&monitor.CollectDetailedData,
 			&monitor.CreatedAt,
 			&monitor.UpdatedAt,
 		)
@@ -117,7 +120,7 @@ func (u *UrlRepositoryPg) GetById(id int) (*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
-			last_checked, expected_status_code, created_at, updated_at 
+			last_checked, expected_status_code,collect_detailed_data, created_at, updated_at 
 		FROM url_monitors WHERE id = $1`
 
 	var monitor models.UrlMonitors
@@ -129,6 +132,7 @@ func (u *UrlRepositoryPg) GetById(id int) (*models.UrlMonitors, error) {
 		&monitor.TimeoutSeconds,
 		&monitor.LastChecked,
 		&monitor.ExpectedStatusCode,
+		&monitor.CollectDetailedData,
 		&monitor.CreatedAt,
 		&monitor.UpdatedAt)
 
@@ -146,7 +150,7 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
-			last_checked, expected_status_code, created_at, updated_at 
+			last_checked, expected_status_code,collect_detailed_data, created_at, updated_at 
 		FROM url_monitors WHERE id = $1`
 
 	var monitor models.UrlMonitors
@@ -158,6 +162,7 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 		&monitor.TimeoutSeconds,
 		&monitor.LastChecked,
 		&monitor.ExpectedStatusCode,
+		&monitor.CollectDetailedData,
 		&monitor.CreatedAt,
 		&monitor.UpdatedAt)
 
@@ -179,6 +184,7 @@ func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
 		timeout_seconds, 
 		last_checked, 
 		expected_status_code,
+		collect_detailed_data,
 		created_at
 	 FROM url_monitors
 	 WHERE status NOT IN ('PAUSED','DELETED','PENDING')
@@ -208,6 +214,7 @@ func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
 			&dueMonitorUrl.TimeoutSeconds,
 			&dueMonitorUrl.LastChecked,
 			&dueMonitorUrl.ExpectedStatusCode,
+			&dueMonitorUrl.CollectDetailedData,
 			&dueMonitorUrl.CreatedAt,
 		)
 		if err != nil {
