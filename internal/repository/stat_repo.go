@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"strings"
 )
@@ -12,6 +13,7 @@ type StatRepository interface {
 	GetAvgResponseData(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error)
 	BulkCreate(monitorChecks []*models.MonitorCheck) ([]int, error)
 	GetUptimeData(monitorId int, startDate string, endDate string) ([]*models.UptimeStat, error)
+	GetDetailedTimeData(monitorId int, startDate string, endDate string) ([]*models.DetailedTimeStat, error)
 }
 
 type StatRepositoryPg struct {
@@ -206,4 +208,51 @@ func (sr *StatRepositoryPg) BulkCreate(monitorChecks []*models.MonitorCheck) ([]
 		return nil, err
 	}
 	return entityIds, nil
+}
+
+func (sr *StatRepositoryPg) GetDetailedTimeData(monitorId int, startDate string, endDate string) ([]*models.DetailedTimeStat, error) {
+	rsDateQuery := `
+		SELECT 
+			mc.timestamp,
+			mc.response_time,
+			mc.ttfb,
+			mc.content_size,
+			mc.request_type,
+			um.url
+		FROM 
+			monitor_checks mc
+		INNER JOIN 
+			url_monitors um 
+			ON um.id = mc.monitor_id
+		WHERE 
+			mc.monitor_id = $1
+			AND DATE(mc.timestamp) BETWEEN $2 AND $3
+			AND mc.is_up = true
+			AND mc.request_type=$4
+	`
+
+	rows, err := sr.db.Query(rsDateQuery, monitorId, startDate, endDate, http.MethodGet)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []*models.DetailedTimeStat
+
+	for rows.Next() {
+		var rts models.DetailedTimeStat
+
+		err := rows.Scan(&rts.Timestamp, &rts.ResponseTime, &rts.Ttfb, &rts.ContentSize, &rts.RequestType, &rts.Url)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &rts)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

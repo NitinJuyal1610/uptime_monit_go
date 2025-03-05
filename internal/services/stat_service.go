@@ -5,6 +5,7 @@ import (
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
 	"strings"
+	"time"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
@@ -34,7 +35,7 @@ func formatTimeData(data []*models.ResponseTimeStat) ([]opts.LineData, []string)
 		keys = append(keys, strings.TrimSuffix(d.Date, "T00:00:00Z"))
 		items = append(items, opts.LineData{
 			Name:  strings.TrimSuffix(d.Date, "T00:00:00Z"),
-			Value: d.AvgResponseTime,
+			Value: d.AvgResponseTime * 1000,
 		})
 	}
 	return items, keys
@@ -111,21 +112,21 @@ func (ss *StatService) CreateAvgResponseGraph(monitorId int, startDate string, e
 			SplitLine: &opts.SplitLine{Show: opts.Bool(false)},
 		}),
 		charts.WithYAxisOpts(opts.YAxis{
-			Type:      "value",
-			Name:      "Response Time (ms)",
-			NameGap:   30,
-			Min:       0,
-			SplitLine: &opts.SplitLine{Show: opts.Bool(true), LineStyle: &opts.LineStyle{Color: "#374151"}},
+			Type:  "value",
+			Name:  "Time (ms)",
+			Min:   0,
+			Scale: opts.Bool(true),
 			AxisLabel: &opts.AxisLabel{
 				Formatter: "{value} ms",
 				Color:     "#E5E7EB",
 			},
+			SplitLine: &opts.SplitLine{Show: opts.Bool(true), LineStyle: &opts.LineStyle{Color: "#374151"}},
 		}),
 		charts.WithGridOpts(opts.Grid{
-			Left:         "3%",
-			Right:        "5%",
-			Bottom:       "10%",
-			Top:          "15%",
+			Left:         "5%",
+			Right:        "10%",
+			Bottom:       "15%",
+			Top:          "20%",
 			ContainLabel: opts.Bool(true),
 		}),
 	)
@@ -252,10 +253,25 @@ func (ss *StatService) CreateUptimeGraph(monitorId int, startDate string, endDat
 }
 
 func (ss *StatService) CreateDetailedTimeGraph(monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
-	responseInfo, err := ss.statRepo.GetUptimeData(monitorId, startDate, endDate)
-
+	responseInfo, err := ss.statRepo.GetDetailedTimeData(monitorId, startDate, endDate)
 	if err != nil {
 		return render.ChartSnippet{}, err
+	}
+
+	if len(responseInfo) == 0 {
+		return render.ChartSnippet{}, nil
+	}
+
+	var (
+		keys             []string
+		ttfbData         []opts.LineData
+		responseTimeData []opts.LineData
+	)
+
+	for _, stat := range responseInfo {
+		keys = append(keys, stat.Timestamp.In(time.FixedZone("IST", 19800)).Format("2006-01-02 03:04 PM"))
+		ttfbData = append(ttfbData, opts.LineData{Value: stat.Ttfb * 1000})
+		responseTimeData = append(responseTimeData, opts.LineData{Value: stat.ResponseTime * 1000})
 	}
 
 	lineChart := charts.NewLine()
@@ -263,12 +279,12 @@ func (ss *StatService) CreateDetailedTimeGraph(monitorId int, startDate string, 
 		charts.WithInitializationOpts(opts.Initialization{
 			Theme:           "dark",
 			Width:           "100%",
-			Height:          "400px",
+			Height:          "500px",
 			BackgroundColor: "#111827",
 		}),
 		charts.WithTitleOpts(opts.Title{
-			Title:    "Uptime Trend",
-			Subtitle: fmt.Sprintf("From %s to %s", startDate, endDate),
+			Title:    "Performance Metrics",
+			Subtitle: fmt.Sprintf("TTFB and Response Time (%s to %s)", startDate, endDate),
 			Left:     "center",
 			TitleStyle: &opts.TextStyle{
 				FontSize: 18,
@@ -278,9 +294,10 @@ func (ss *StatService) CreateDetailedTimeGraph(monitorId int, startDate string, 
 		charts.WithTooltipOpts(opts.Tooltip{
 			Trigger: "axis",
 			Formatter: opts.FuncOpts(`function (params) {
-				let tooltipText = '';
+				let tooltipText = params[0].axisValue + '<br/>';
 				params.forEach((item) => {
-					tooltipText += item.marker + ' <strong>' + item.seriesName + '</strong>: ' + item.value.toFixed(2) + ' %<br>';
+					tooltipText += item.marker + ' <strong>' + item.seriesName + '</strong>: ' + 
+								   item.value.toFixed(2) + ' ms<br>';
 				});
 				return tooltipText;
 			}`),
@@ -298,49 +315,56 @@ func (ss *StatService) CreateDetailedTimeGraph(monitorId int, startDate string, 
 		}),
 		charts.WithXAxisOpts(opts.XAxis{
 			Type:      "category",
-			Name:      "Date",
+			Name:      "Timestamp",
 			NameGap:   10,
-			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Color: "#E5E7EB"},
+			AxisLabel: &opts.AxisLabel{Show: opts.Bool(true), Color: "#E5E7EB", Rotate: 45},
 			SplitLine: &opts.SplitLine{Show: opts.Bool(false)},
-		}),
-		charts.WithYAxisOpts(opts.YAxis{
-			Type:      "value",
-			Name:      "Uptime (%)",
-			NameGap:   30,
-			Min:       0,
-			Max:       100,
-			SplitLine: &opts.SplitLine{Show: opts.Bool(true), LineStyle: &opts.LineStyle{Color: "#374151"}},
-			AxisLabel: &opts.AxisLabel{
-				Formatter: "{value} %",
-				Color:     "#E5E7EB",
+			AxisTick: &opts.AxisTick{
+				Show: opts.Bool(false),
 			},
 		}),
+
+		charts.WithYAxisOpts(opts.YAxis{
+			Type:  "value",
+			Name:  "Time (ms)",
+			Min:   0,
+			Scale: opts.Bool(true),
+			AxisLabel: &opts.AxisLabel{
+				Formatter: "{value} ms",
+				Color:     "#E5E7EB",
+			},
+			SplitLine: &opts.SplitLine{Show: opts.Bool(true), LineStyle: &opts.LineStyle{Color: "#374151"}},
+		}),
 		charts.WithGridOpts(opts.Grid{
-			Left:         "3%",
-			Right:        "5%",
-			Bottom:       "10%",
-			Top:          "15%",
+			Left:         "5%",
+			Right:        "10%",
+			Bottom:       "15%",
+			Top:          "20%",
 			ContainLabel: opts.Bool(true),
 		}),
 	)
 
-	graphData, keys := formatUptimeData(responseInfo)
-
-	var urlStr string
-	if len(responseInfo) > 0 {
-		urlStr = strings.TrimPrefix(responseInfo[0].Url, "https://")
-	}
-	lineChart.SetXAxis(keys).AddSeries(urlStr, graphData).
-		SetSeriesOptions(
-			charts.WithLineChartOpts(opts.LineChart{
-				Smooth: opts.Bool(true),
-			}),
+	// Set X-axis and add series
+	lineChart.SetXAxis(keys).
+		AddSeries("TTFB", ttfbData,
+			charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}),
 			charts.WithLineStyleOpts(opts.LineStyle{
 				Width: 3,
-				Color: "#10B981", // Green color for uptime
+				Color: "#10B981",
 			}),
 			charts.WithAreaStyleOpts(opts.AreaStyle{
 				Color:   "#10B98133",
+				Opacity: 0.4,
+			}),
+		).
+		AddSeries("Response Time", responseTimeData,
+			charts.WithLineChartOpts(opts.LineChart{Smooth: opts.Bool(true)}),
+			charts.WithLineStyleOpts(opts.LineStyle{
+				Width: 3,
+				Color: "#3B82F6",
+			}),
+			charts.WithAreaStyleOpts(opts.AreaStyle{
+				Color:   "#3B82F633",
 				Opacity: 0.4,
 			}),
 		)

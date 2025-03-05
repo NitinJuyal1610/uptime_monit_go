@@ -238,7 +238,26 @@
               hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
               id="uptime-chart"
             >
-              <!-- response time graph -->
+              <!-- uptime time graph -->
+            </div>
+          </div>
+
+          <div
+            id="graph-container"
+            hx-ext="path-params"
+            class="mt-6 p-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-lg w-full"
+          >
+            <div
+              class="relative w-full"
+              hx-get="/api/monitors/{itemId}/detailed-time-graph"
+              hx-include="[name='start_date'], [name='end_date']"
+              hx-trigger="click from:#apply-filters"
+              hx-swap="innerHTML"
+              hx-target="#detailed-time-chart"
+              hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
+              id="detailed-time-chart"
+            >
+              <!-- detailed time graph -->
             </div>
           </div>
         </div>

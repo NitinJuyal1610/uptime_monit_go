@@ -51,12 +51,19 @@ class="monitor-item bg-gray-900 border
   hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
 </div>
 
-
-<!-- Second API call -->
+<!-- Third API call -->
 <div
   hx-get="/api/monitors/{{.Monitor.ID}}/uptime-graph"
   hx-target="#uptime-chart"
   hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
 </div>
+
+<!-- Fourth API Call -->
+<div
+  hx-get="/api/monitors/{{.Monitor.ID}}/detailed-time-graph"
+  hx-target="#detailed-time-chart"
+  hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+</div>
+
 </div>
 {{end}}

@@ -2,59 +2,69 @@
   <div class="container">
     <div
       class="item"
-      id="zYwPQoaPEsBI"
-      style="width: 100%; height: 400px"
+      id="auhUbTAZXWBB"
+      style="width: 100%; height: 500px"
     ></div>
   </div>
 
   <script type="text/javascript">
     'use strict';
-    let goecharts_zYwPQoaPEsBI = echarts.init(
-      document.getElementById('zYwPQoaPEsBI'),
+    let goecharts_auhUbTAZXWBB = echarts.init(
+      document.getElementById('auhUbTAZXWBB'),
       'dark',
       { renderer: 'canvas' },
     );
-    let option_zYwPQoaPEsBI = {
+    let option_auhUbTAZXWBB = {
       backgroundColor: '#111827',
       grid: [
         {
-          left: '3%',
-          top: '15%',
-          right: '5%',
-          bottom: '10%',
+          left: '5%',
+          top: '20%',
+          right: '10%',
+          bottom: '15%',
           containLabel: true,
         },
       ],
       legend: { show: true, left: 'right', textStyle: { color: '#E5E7EB' } },
       series: [
         {
-          name: 'https://github.com',
+          name: 'TTFB',
           type: 'line',
           smooth: true,
-          data: [{ value: 0 }],
+          data: [{ value: 0.8341394 }, { value: 0.7064696 }],
           lineStyle: { color: '#10B981', width: 3 },
           areaStyle: { color: '#10B98133', opacity: 0.4 },
         },
+        {
+          name: 'Response Time',
+          type: 'line',
+          smooth: true,
+          data: [{ value: 0.8364472 }, { value: 0.7088229 }],
+          lineStyle: { color: '#3B82F6', width: 3 },
+          areaStyle: { color: '#3B82F633', opacity: 0.4 },
+        },
       ],
       title: {
-        text: 'API Response Time Trend',
+        text: 'Performance Metrics',
         textStyle: { color: '#E5E7EB', fontSize: 18 },
-        subtext: 'Last 30 Days',
+        subtext: 'TTFB and Response Time (2025-02-03 to 2025-03-05)',
         left: 'center',
       },
       toolbox: {},
       tooltip: {
         trigger: 'axis',
         formatter: function (params) {
-          let tooltipText = '';
+          let tooltipText = params[0].axisValue + '<br/>';
           params.forEach((item) => {
             tooltipText +=
               item.marker +
               ' <strong>' +
               item.seriesName +
               '</strong>: ' +
-              item.value +
-              ' ms<br>';
+              item.value.toFixed(2) +
+              ' ' +
+              (item.seriesIndex === 0 ? 'ms' : 's') +
+              '<br>';
           });
           return tooltipText;
         },
@@ -63,12 +73,13 @@
       xAxis: [
         {
           type: 'category',
-          name: 'Date',
+          name: 'Timestamp',
           nameGap: 10,
-          data: ['No Data'],
+          data: ['2025-03-05 15:47', '2025-03-05 15:48'],
           splitLine: { show: false },
           axisLabel: {
             show: true,
+            rotate: 45,
             showMinLabel: null,
             showMaxLabel: null,
             color: '#E5E7EB',
@@ -77,21 +88,22 @@
       ],
       yAxis: [
         {
-          name: 'Response Time (ms)',
-          nameGap: 30,
+          name: 'Response Time (s)',
+          position: 'right',
           type: 'value',
+          scale: true,
           min: 0,
-          splitLine: { show: true, lineStyle: { color: '#374151' } },
+          splitLine: { show: false },
           axisLabel: {
-            formatter: '{value} ms',
+            formatter: '{value} s',
             showMinLabel: null,
             showMaxLabel: null,
-            color: '#E5E7EB',
+            color: '#3B82F6',
           },
         },
       ],
     };
 
-    goecharts_zYwPQoaPEsBI.setOption(option_zYwPQoaPEsBI);
+    goecharts_auhUbTAZXWBB.setOption(option_auhUbTAZXWBB);
   </script>
 </div>
