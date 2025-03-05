@@ -27,6 +27,7 @@ type RawStats struct {
 	IsUp               bool          `json:"is_up"`
 	MonitorId          int           `json:"monitor_id"`
 	ExpectedStatusCode int           `json:"expected_status_code"`
+	RequestType        string        `json:"request_type"`
 }
 
 func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRepository) *UrlService {
@@ -37,7 +38,6 @@ func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRep
 			IdleConnTimeout:     90 * time.Second,
 			DisableKeepAlives:   true,
 		},
-		Timeout: 10 * time.Second,
 	}
 	return &UrlService{urlRepo: urlRepo, httpClient: httpClient, statRepo: statRepo}
 }
@@ -132,6 +132,7 @@ func (us *UrlService) processBatch(batch []*RawStats) error {
 			StatusCode:   raw.StatusCode,
 			ResponseTime: raw.ResponseTime.Seconds(),
 			IsUp:         raw.IsUp,
+			RequestType:  raw.RequestType,
 			Timestamp:    currentTime,
 		}
 
@@ -210,14 +211,17 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 		}
 
 		return &RawStats{
+			RequestType:  method,
 			StatusCode:   statusCode,
-			ResponseTime: responseTime,
+			ResponseTime: time.Since(start),
 			IsUp:         false,
 		}, err
 	}
 	defer resp.Body.Close()
 
-	var rawStats = &RawStats{}
+	var rawStats = &RawStats{
+		RequestType: method,
+	}
 	if collectDetailedData {
 		//copy body
 		writtenBytes, err := io.Copy(io.Discard, resp.Body)

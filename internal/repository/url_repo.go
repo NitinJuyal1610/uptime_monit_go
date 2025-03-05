@@ -62,7 +62,7 @@ func (u *UrlRepositoryPg) GetAll(status string, keyword string) ([]*models.UrlMo
 	query := `
 		SELECT 
 			id, REGEXP_REPLACE(url, '^https?://', '', 'i') AS trimmed_url, status, frequency_minutes, timeout_seconds, 
-			last_checked, expected_status_code,collect_detailed_data created_at, updated_at 
+			last_checked, expected_status_code, collect_detailed_data ,created_at, updated_at 
 		FROM url_monitors`
 
 	var args []any
@@ -150,7 +150,7 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
-			last_checked, expected_status_code,collect_detailed_data, created_at, updated_at 
+			last_checked, expected_status_code, collect_detailed_data, created_at, updated_at 
 		FROM url_monitors WHERE id = $1`
 
 	var monitor models.UrlMonitors

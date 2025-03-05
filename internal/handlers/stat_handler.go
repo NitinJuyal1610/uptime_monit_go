@@ -105,7 +105,7 @@ func (s *StatHandler) GetAvgResponseGraph(w http.ResponseWriter, r *http.Request
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	lineSnippet, err := s.statService.GetAvgResponseGraph(monitorId, startDate, endDate)
+	lineSnippet, err := s.statService.CreateAvgResponseGraph(monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch average response graph %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
@@ -156,7 +156,58 @@ func (s *StatHandler) GetUptimeGraph(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
-	lineSnippet, err := s.statService.GetUptimeGraph(monitorId, startDate, endDate)
+	lineSnippet, err := s.statService.CreateUptimeGraph(monitorId, startDate, endDate)
+	if err != nil {
+		errStr := fmt.Sprintf("Failed to fetch uptime graph %v", err)
+		http.Error(w, errStr, http.StatusBadRequest)
+		return
+	}
+
+	data := struct {
+		Element template.HTML
+		Script  template.HTML
+	}{
+		Element: template.HTML(lineSnippet.Element),
+		Script:  template.HTML(lineSnippet.Script),
+	}
+
+	s.templateManager.Render(w, "chart-container.html", data)
+}
+
+func (s *StatHandler) GetDetailedTimeGraph(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	dayStr := r.URL.Query().Get("days")
+
+	monitorId, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid monitor ID", http.StatusBadRequest)
+		return
+	}
+
+	now := time.Now()
+	var days int
+
+	if dayStr != "" {
+		days, err = strconv.Atoi(dayStr)
+		if err != nil {
+			http.Error(w, "Invalid days parameter", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if startDate == "" || endDate == "" {
+		endDate = now.Format("2006-01-02")
+		startDate = now.AddDate(0, 0, -30).Format("2006-01-02")
+	}
+
+	if dayStr != "" {
+		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
+	}
+
+	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
+	lineSnippet, err := s.statService.CreateDetailedTimeGraph(monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch uptime graph %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)

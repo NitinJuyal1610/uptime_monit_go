@@ -28,7 +28,7 @@ func (s *Server) SetupRoutes() http.Handler {
 	r.Get("/api/monitors/{id}/avg-response-graph", statHandler.GetAvgResponseGraph)
 	r.Get("/api/monitors/{id}/stats", statHandler.GetMonitorStats)
 	r.Get("/api/monitors/{id}/uptime-graph", statHandler.GetUptimeGraph)
-	// r.Get("/api/monitors/{id}/ttfb-graph", statHandler.GetTTFBGraph)
+	r.Get("/api/monitors/{id}/detailed-time-graph", statHandler.GetDetailedTimeGraph)
 
 	return r
 }

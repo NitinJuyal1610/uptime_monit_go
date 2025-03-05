@@ -179,15 +179,14 @@ func (sr *StatRepositoryPg) BulkCreate(monitorChecks []*models.MonitorCheck) ([]
 
 	for i, stat := range monitorChecks {
 		timeSeconds := stat.ResponseTime
-		valueStrings[i] = fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6)
-		valueArgs = append(valueArgs, stat.MonitorId, stat.StatusCode, timeSeconds, stat.IsUp, stat.Ttfb, stat.ContentSize)
+		valueStrings[i] = fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d)", i*7+1, i*7+2, i*7+3, i*7+4, i*7+5, i*7+6, i*7+7)
+		valueArgs = append(valueArgs, stat.MonitorId, stat.StatusCode, timeSeconds, stat.IsUp, stat.Ttfb, stat.ContentSize, stat.RequestType)
 	}
 
 	query := fmt.Sprintf(`
-		INSERT INTO monitor_checks (monitor_id, status_code, response_time, is_up, ttfb, content_size)
+		INSERT INTO monitor_checks (monitor_id, status_code, response_time, is_up, ttfb, content_size, request_type)
 		VALUES %s RETURNING id`, strings.Join(valueStrings, ", "))
 
-	fmt.Println(query, valueArgs)
 	rows, err := sr.db.Query(query, valueArgs...)
 	if err != nil {
 		return nil, err
