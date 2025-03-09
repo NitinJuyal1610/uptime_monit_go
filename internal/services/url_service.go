@@ -147,7 +147,6 @@ func (us *UrlService) handleNotifications(notifyChan <-chan *models.NotifyAlert)
 			log.Printf("Failed to send notification to %s: %v", notifyItem.AlertEmail, err)
 		}
 	}
-
 }
 
 func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
@@ -231,16 +230,25 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 	)
 
 	method := http.MethodHead
-	trace := httptrace.ClientTrace{
-		GotFirstResponseByte: func() {
-			ttfb = time.Since(start)
+	trace := &httptrace.ClientTrace{
+		DNSStart:     func(info httptrace.DNSStartInfo) { fmt.Println("DNS lookup start:", url, info.Host, time.Since(start)) },
+		DNSDone:      func(info httptrace.DNSDoneInfo) { fmt.Println("DNS lookup done", url, time.Since(start)) },
+		ConnectStart: func(network, addr string) { fmt.Println("Connecting to:", addr, url, time.Since(start)) },
+		ConnectDone: func(network, addr string, err error) {
+			if err != nil {
+				fmt.Println("Connection failed:", err)
+			} else {
+				fmt.Println("Connected:", addr, url, time.Since(start))
+			}
 		},
+		GotFirstResponseByte: func() { fmt.Println("First byte received", url, time.Since((start))); ttfb = time.Since(start) },
 	}
+
 	if collectDetailedData {
 		method = http.MethodGet
 	}
 
-	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(ctx, &trace), method, url, nil)
+	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(ctx, trace), method, url, nil)
 	if err != nil {
 		return nil, err
 	}
