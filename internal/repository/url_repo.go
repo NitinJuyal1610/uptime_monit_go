@@ -190,6 +190,9 @@ func (u *UrlRepositoryPg) GetDueMonitors() ([]*models.UrlMonitors, error) {
 		last_checked, 
 		expected_status_code,
 		collect_detailed_data,
+		consecutive_fails,
+		max_fail_threshold,
+		alert_email,
 		created_at
 	 FROM url_monitors
 	 WHERE status NOT IN ('PAUSED','DELETED','PENDING')
@@ -220,6 +223,9 @@ func (u *UrlRepositoryPg) GetDueMonitors() ([]*models.UrlMonitors, error) {
 			&dueMonitorUrl.LastChecked,
 			&dueMonitorUrl.ExpectedStatusCode,
 			&dueMonitorUrl.CollectDetailedData,
+			&dueMonitorUrl.ConsecutiveFails,
+			&dueMonitorUrl.MaxFailThreshold,
+			&dueMonitorUrl.AlertEmail,
 			&dueMonitorUrl.CreatedAt,
 		)
 		if err != nil {

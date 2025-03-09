@@ -10,14 +10,18 @@ import (
 	"net/http/httptrace"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
+	"os"
 	"sync"
 	"time"
+
+	"gopkg.in/gomail.v2"
 )
 
 type UrlService struct {
-	urlRepo    repository.UrlRepository
-	statRepo   repository.StatRepository
-	httpClient *http.Client
+	urlRepo     repository.UrlRepository
+	statRepo    repository.StatRepository
+	httpClient  *http.Client
+	emailClient *gomail.Dialer
 }
 
 type RawStats struct {
@@ -39,7 +43,18 @@ func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRep
 			IdleConnTimeout:     90 * time.Second,
 		},
 	}
-	return &UrlService{urlRepo: urlRepo, httpClient: httpClient, statRepo: statRepo}
+
+	//
+	gmailUser := os.Getenv("GMAIL_USER")
+	gmailPass := os.Getenv("GMAIL_PASS")
+
+	if gmailUser == "" || gmailPass == "" {
+		log.Fatal("Missing required environment variables: GMAIL_USER or GMAIL_PASS")
+	}
+
+	emailClient := gomail.NewDialer("smtp.gmail.com", 587, gmailUser, gmailPass)
+
+	return &UrlService{urlRepo: urlRepo, httpClient: httpClient, statRepo: statRepo, emailClient: emailClient}
 }
 
 func (us *UrlService) CreateUrl(urlMonitor *models.UrlMonitors) (int, error) {
@@ -63,12 +78,12 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 	}
 	statChan := make(chan *RawStats, len(monitors))
 	limitChan := make(chan bool, 15)
-
+	notifyChan := make(chan *models.NotifyAlert, len(monitors))
 	fmt.Printf("%d urls to be processed \n", len(monitors))
 	var wg sync.WaitGroup
 	for _, url := range monitors {
 		wg.Add(1)
-		go func(targetUrl string, monitorId int, expectedStatusCode int, collectDetailedData bool) {
+		go func(targetUrl string, monitorId int, expectedStatusCode int, collectDetailedData bool, alertEmail string, maxFailThreshold int, consecutiveFails int) {
 			defer wg.Done()
 			//semaphore increment
 			limitChan <- true
@@ -78,21 +93,61 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(url.TimeoutSeconds)*time.Second)
 			defer cancel()
 			stats, err := us.fetchStatsFromUrl(ctx, targetUrl, collectDetailedData)
+
+			if err == nil && stats != nil && !stats.IsUp && url.MaxFailThreshold > 0 && (url.ConsecutiveFails+1 >= url.MaxFailThreshold) {
+				notifyChan <- &models.NotifyAlert{
+					Url:              targetUrl,
+					MonitorId:        monitorId,
+					ConsecutiveFails: consecutiveFails,
+					AlertEmail:       alertEmail,
+				}
+			}
 			if err == nil {
 				stats.MonitorId = monitorId
 				stats.ExpectedStatusCode = expectedStatusCode
 				statChan <- stats
 			}
-		}(url.Url, url.ID, url.ExpectedStatusCode, url.CollectDetailedData)
+		}(url.Url, url.ID, url.ExpectedStatusCode, url.CollectDetailedData, url.AlertEmail, url.MaxFailThreshold, url.ConsecutiveFails)
 	}
 
 	go func() {
 		wg.Wait()
 		close(statChan)
 		close(limitChan)
+		close(notifyChan)
 	}()
 
+	go us.handleNotifications(notifyChan)
 	return us.saveResultsToDB(statChan)
+}
+
+func (us *UrlService) handleNotifications(notifyChan <-chan *models.NotifyAlert) {
+	for notifyItem := range notifyChan {
+		m := gomail.NewMessage()
+		m.SetHeader("From", "n.juyal99@gmail.com")
+		m.SetHeader("To", notifyItem.AlertEmail)
+		m.SetHeader("Subject", "⚠ Monitor Alert: Website Down")
+
+		body := fmt.Sprintf(`
+			<html>
+			<body style="font-family: Arial, sans-serif; color: #333;">
+				<h2 style="color: #d32f2f;">🚨 Website Down Alert!</h2>
+				<p><strong>URL:</strong> <a href="%s">%s</a></p>
+				<p><strong>Consecutive Failures:</strong> %d</p>
+				<p>Please check the website status immediately.</p>
+				<hr>
+				<p style="font-size: 12px; color: #777;">This is an automated message from your monitoring system.</p>
+			</body>
+			</html>
+		`, notifyItem.Url, notifyItem.Url, notifyItem.ConsecutiveFails+1)
+
+		m.SetBody("text/html", body)
+
+		if err := us.emailClient.DialAndSend(m); err != nil {
+			log.Printf("Failed to send notification to %s: %v", notifyItem.AlertEmail, err)
+		}
+	}
+
 }
 
 func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
@@ -147,6 +202,12 @@ func (us *UrlService) processBatch(batch []*RawStats) error {
 			LastChecked: currentTime,
 			Status:      status,
 		}
+
+		if !raw.IsUp {
+			monitorUpdates[raw.MonitorId].ConsecutiveFails += 1
+		} else {
+			monitorUpdates[raw.MonitorId].ConsecutiveFails = 0
+		}
 	}
 
 	if _, err := us.statRepo.BulkCreate(monitorChecks); err != nil {
@@ -178,6 +239,7 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 	if collectDetailedData {
 		method = http.MethodGet
 	}
+
 	req, err := http.NewRequestWithContext(httptrace.WithClientTrace(ctx, &trace), method, url, nil)
 	if err != nil {
 		return nil, err
@@ -209,6 +271,7 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 	var rawStats = &RawStats{
 		RequestType: method,
 	}
+
 	if collectDetailedData {
 		//copy body
 		writtenBytes, err := io.Copy(io.Discard, resp.Body)
