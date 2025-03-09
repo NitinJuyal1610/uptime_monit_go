@@ -24,5 +24,7 @@ Refractoring
 3. Basic UI ✅
 4. Add List Integration ✅
 5. Summary Stats Integration ✅
+6. Uptime trend color codes ✅
+7. Performance chart ttfb vs total RT ✅
 
 ```
