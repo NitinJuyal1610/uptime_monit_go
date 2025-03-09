@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"reflect"
 )
 
 //go:embed templates/**/*.html
@@ -30,10 +31,36 @@ func dict(values ...interface{}) (map[string]interface{}, error) {
 	return dict, nil
 }
 
+func add(a, b int) int {
+	return a + b
+}
+
+func mul(a, b int) int {
+	return a * b
+}
+
+// mod returns the remainder of a divided by b
+func mod(a, b int) int {
+	return a % b
+}
+
+// len returns the length of a slice, array, map, or string
+func len(v any) int {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Slice || rv.Kind() == reflect.Array ||
+		rv.Kind() == reflect.Map || rv.Kind() == reflect.String {
+		return rv.Len()
+	}
+	return 0
+}
+
 func NewManager() (*TemplateManager, error) {
 
 	tmpl := template.New("root").Funcs(template.FuncMap{
 		"dict": dict,
+		"add":  add,
+		"mod":  mod,
+		"mul":  mul,
 	})
 
 	tmpl, err := tmpl.ParseFS(templateFS, "templates/**/*.html")

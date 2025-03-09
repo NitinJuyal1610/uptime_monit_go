@@ -36,7 +36,6 @@ func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRep
 			MaxIdleConns:        100,
 			MaxIdleConnsPerHost: 10,
 			IdleConnTimeout:     90 * time.Second,
-			DisableKeepAlives:   true,
 		},
 	}
 	return &UrlService{urlRepo: urlRepo, httpClient: httpClient, statRepo: statRepo}

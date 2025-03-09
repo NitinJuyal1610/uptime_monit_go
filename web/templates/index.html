@@ -91,6 +91,19 @@
           <div id="stat-summary"><!-- stats div --></div>
 
           <div
+            id="graph-container"
+            hx-ext="path-params"
+            class="mt-6 bg-gray-900 w-full rounded-xl transition-transform duration-300 ease-in-out hover:translate-y-[-10px] hover:shadow-2xl transform hover:scale-[1.02]"
+          >
+            <div
+              class="relative w-full flex justify-center items-center bg-gray-850 rounded-xl"
+              id="uptime-chart"
+            >
+              <!-- uptime time graph -->
+            </div>
+          </div>
+
+          <div
             id="filter-options"
             class="mb-4 mt-4 rounded-xl bg-gray-900 border border-gray-800 shadow-lg p-4"
           >
@@ -220,25 +233,6 @@
               hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
             >
               <!-- response time graph -->
-            </div>
-          </div>
-
-          <div
-            id="graph-container"
-            hx-ext="path-params"
-            class="mt-6 p-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl w-full transition-transform duration-300 ease-in-out hover:translate-y-[-10px] hover:shadow-2xl transform hover:scale-[1.02]"
-          >
-            <div
-              class="relative w-full h-64 md:h-80 lg:h-96"
-              hx-get="/api/monitors/{itemId}/uptime-graph"
-              hx-include="[name='start_date'], [name='end_date']"
-              hx-trigger="click from:#apply-filters"
-              hx-swap="innerHTML"
-              hx-target="#uptime-chart"
-              hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
-              id="uptime-chart"
-            >
-              <!-- uptime time graph -->
             </div>
           </div>
 

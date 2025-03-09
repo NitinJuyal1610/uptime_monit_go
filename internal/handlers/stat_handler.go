@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"nitinjuyal1610/uptimeMonitor/internal/models"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
 	templates "nitinjuyal1610/uptimeMonitor/web"
@@ -37,6 +38,10 @@ type MonitorStatsResponse struct {
 	UptimePercentage      float64 `json:"uptime_percentage"`
 	DailyUptimePercentage float64 `json:"daily_uptime_percentage"`
 	DailyAvgResponseTime  float64 `json:"daily_avg_response_time"`
+}
+
+type PageData struct {
+	UptimeStats []*models.UptimeStat
 }
 
 func (s *StatHandler) GetMonitorStats(w http.ResponseWriter, r *http.Request) {
@@ -155,23 +160,17 @@ func (s *StatHandler) GetUptimeGraph(w http.ResponseWriter, r *http.Request) {
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
-	lineSnippet, err := s.statService.CreateUptimeGraph(monitorId, startDate, endDate)
+	uptimeTrend, err := s.statService.CreateUptimeTrend(monitorId, startDate, endDate)
 	if err != nil {
-		errStr := fmt.Sprintf("Failed to fetch uptime graph %v", err)
+		errStr := fmt.Sprintf("Failed to fetch uptime trend %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
 		return
 	}
 
-	data := struct {
-		Element template.HTML
-		Script  template.HTML
-	}{
-		Element: template.HTML(lineSnippet.Element),
-		Script:  template.HTML(lineSnippet.Script),
+	data := PageData{
+		UptimeStats: uptimeTrend,
 	}
-
-	s.templateManager.Render(w, "chart-container.html", data)
+	s.templateManager.Render(w, "uptime-trend.html", data)
 }
 
 func (s *StatHandler) GetDetailedTimeGraph(w http.ResponseWriter, r *http.Request) {
@@ -209,7 +208,7 @@ func (s *StatHandler) GetDetailedTimeGraph(w http.ResponseWriter, r *http.Reques
 	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
 	lineSnippet, err := s.statService.CreateDetailedTimeGraph(monitorId, startDate, endDate)
 	if err != nil {
-		errStr := fmt.Sprintf("Failed to fetch uptime graph %v", err)
+		errStr := fmt.Sprintf("Failed to fetch detailed time graph %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
 		return
 	}

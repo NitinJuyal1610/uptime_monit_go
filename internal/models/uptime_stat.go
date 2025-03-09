@@ -6,4 +6,5 @@ type UptimeStat struct {
 	UptimePercentage float64 `json:"uptime_percentage"`
 	SuccessfulChecks int     `json:"successful_checks"`
 	FailedChecks     int     `json:"failed_checks"`
+	BarColor         string  `json:"bar_color"`
 }
