@@ -27,6 +27,9 @@ type UrlMonitors struct {
 	LastChecked         time.Time `json:"last_checked"`
 	ExpectedStatusCode  int       `json:"expected_status_code"`
 	CollectDetailedData bool      `json:"collect_detailed_data"`
+	MaxFailThreshold    int       `json:"max_fail_threshold"`
+	ConsecutiveFails    int       `json:"consecutive_fails"`
+	AlertEmail          string    `json:"alert_email"`
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }

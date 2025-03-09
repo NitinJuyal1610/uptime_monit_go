@@ -268,10 +268,10 @@
               hx-target="#monitor-list"
               hx-swap="beforeend"
               hx-on::after-request="
-                        if (event.detail.successful) {
-                            document.getElementById('add-monitor-modal').classList.add('hidden');
-                            this.reset();
-                        }"
+                if (event.detail.successful) {
+                  document.getElementById('add-monitor-modal').classList.add('hidden');
+                  this.reset();
+                }"
             >
               <div class="space-y-4">
                 <div>
@@ -300,7 +300,7 @@
                       class="sr-only peer"
                     />
                     <div
-                      class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600"
+                      class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
                     ></div>
                   </label>
                   <p class="text-sm text-gray-500">
@@ -319,6 +319,7 @@
                     class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+
                 <div>
                   <label class="block text-sm font-medium mb-1 text-gray-300"
                     >Expected Status Code</label
@@ -329,6 +330,7 @@
                     class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+
                 <div>
                   <label class="block text-sm font-medium mb-1 text-gray-300"
                     >Timeout Seconds</label
@@ -339,6 +341,61 @@
                     class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
+
+                <div>
+                  <label class="block text-sm font-medium mb-1 text-gray-300">
+                    Enable Alerts
+                  </label>
+                  <label
+                    class="relative inline-flex items-center cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      id="enable-alerts"
+                      class="sr-only peer"
+                      onchange="document.getElementById('alert-options').classList.toggle('hidden', !this.checked)"
+                    />
+                    <div
+                      class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
+                    ></div>
+                  </label>
+                  <p class="text-sm text-gray-500">
+                    Enable this to receive failure alerts via email.
+                  </p>
+                </div>
+
+                <div id="alert-options" class="hidden space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium mb-1 text-gray-300">
+                      Alert Email <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="alert_email"
+                      class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p class="text-sm text-gray-500">
+                      Notifications will be sent here when failures exceed the
+                      threshold.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium mb-1 text-gray-300">
+                      Max Fail Threshold <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="max_fail_threshold"
+                      class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <p class="text-sm text-gray-500">
+                      Number of consecutive failures before an email alert is
+                      sent.
+                    </p>
+                  </div>
+                </div>
+
                 <div class="flex justify-end gap-2 mt-6">
                   <button
                     type="button"

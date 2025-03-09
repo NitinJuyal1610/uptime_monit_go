@@ -11,7 +11,7 @@ type UrlRepository interface {
 	Create(urlMonitor *models.UrlMonitors) (int, error)
 	GetAll(status string, keyword string) ([]*models.UrlMonitors, error)
 	GetById(id int) (*models.UrlMonitors, error)
-	GetDueMonitorURLs() ([]*models.UrlMonitors, error)
+	GetDueMonitors() ([]*models.UrlMonitors, error)
 	Update(id int, urlMonitor *models.UrlMonitors) error
 	BulkUpdate(updates map[int]*models.UrlMonitors) error
 }
@@ -26,6 +26,7 @@ func NewUrlRepository(db *sql.DB) UrlRepository {
 
 func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 	var entityId int
+
 	createQuery := `
 	INSERT INTO url_monitors (
 		url, 
@@ -34,9 +35,11 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 		timeout_seconds, 
 		last_checked, 
 		expected_status_code,
-		collect_detailed_data
+		collect_detailed_data,
+		max_fail_threshold,
+		alert_email
 	) 
-	VALUES ($1, $2, $3, $4, $5, $6) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
 	RETURNING id
 `
 
@@ -49,6 +52,8 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 		urlMonitor.LastChecked,
 		urlMonitor.ExpectedStatusCode,
 		urlMonitor.CollectDetailedData,
+		urlMonitor.MaxFailThreshold,
+		urlMonitor.AlertEmail,
 	).Scan(&entityId)
 
 	if err != nil {
@@ -173,7 +178,7 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 	return &monitor, nil
 }
 
-func (u *UrlRepositoryPg) GetDueMonitorURLs() ([]*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetDueMonitors() ([]*models.UrlMonitors, error) {
 
 	query := `
 	 SELECT

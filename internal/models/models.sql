@@ -6,6 +6,9 @@ CREATE TABLE url_monitors(
     last_checked TIMESTAMP,
     expected_status_code INTEGER,
     status VARCHAR(50),
+    max_fail_threshold INTEGER
+    consecutive_fails INTEGER DEFAULT 0
+    alertEmail VARCHAR(50) 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

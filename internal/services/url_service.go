@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptrace"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
@@ -34,7 +35,7 @@ func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRep
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			MaxIdleConns:        100,
-			MaxIdleConnsPerHost: 10,
+			MaxIdleConnsPerHost: 50,
 			IdleConnTimeout:     90 * time.Second,
 		},
 	}
@@ -56,18 +57,19 @@ func (us *UrlService) GetMonitorById(id int) (*models.UrlMonitors, error) {
 func (us *UrlService) ProcessDueMonitorURLs() error {
 	// Channels for stats and Concurrent api calls limit
 	// Fetch URLs to process
-	urls, err := us.urlRepo.GetDueMonitorURLs()
+	monitors, err := us.urlRepo.GetDueMonitors()
 	if err != nil {
 		return fmt.Errorf("failed to get urls : %w", err)
 	}
-	statChan := make(chan *RawStats, len(urls))
-	limitChan := make(chan bool, 10)
+	statChan := make(chan *RawStats, len(monitors))
+	limitChan := make(chan bool, 15)
 
-	fmt.Printf("%d urls to be processed \n", len(urls))
+	fmt.Printf("%d urls to be processed \n", len(monitors))
 	var wg sync.WaitGroup
-	for _, url := range urls {
+	for _, url := range monitors {
 		wg.Add(1)
 		go func(targetUrl string, monitorId int, expectedStatusCode int, collectDetailedData bool) {
+			defer wg.Done()
 			//semaphore increment
 			limitChan <- true
 			defer func() {
@@ -75,11 +77,12 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 			}()
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(url.TimeoutSeconds)*time.Second)
 			defer cancel()
-			defer wg.Done()
-			stats, _ := us.fetchStatsFromUrl(ctx, targetUrl, collectDetailedData)
-			stats.MonitorId = monitorId
-			stats.ExpectedStatusCode = expectedStatusCode
-			statChan <- stats
+			stats, err := us.fetchStatsFromUrl(ctx, targetUrl, collectDetailedData)
+			if err == nil {
+				stats.MonitorId = monitorId
+				stats.ExpectedStatusCode = expectedStatusCode
+				statChan <- stats
+			}
 		}(url.Url, url.ID, url.ExpectedStatusCode, url.CollectDetailedData)
 	}
 
@@ -157,21 +160,6 @@ func (us *UrlService) processBatch(batch []*RawStats) error {
 	return nil
 }
 
-func determineStatus(raw *RawStats) models.Status {
-	switch {
-	case raw.IsUp && raw.StatusCode == raw.ExpectedStatusCode:
-		return models.StatusUp
-	case raw.IsUp && raw.StatusCode != raw.ExpectedStatusCode:
-		return models.StatusError
-	case !raw.IsUp && raw.StatusCode == http.StatusRequestTimeout:
-		return models.StatusTimeout
-	case !raw.IsUp:
-		return models.StatusDown
-	default:
-		return models.StatusUnknown
-	}
-}
-
 func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collectDetailedData bool) (*RawStats, error) {
 	var (
 		start        = time.Now()
@@ -214,7 +202,7 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 			StatusCode:   statusCode,
 			ResponseTime: time.Since(start),
 			IsUp:         false,
-		}, err
+		}, nil
 	}
 	defer resp.Body.Close()
 
@@ -225,7 +213,7 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 		//copy body
 		writtenBytes, err := io.Copy(io.Discard, resp.Body)
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("Failed to Copy Bytes.... %v", err)
 		}
 		contentSize = writtenBytes
 		rawStats.ContentSize = contentSize
@@ -240,4 +228,19 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 
 	fmt.Printf("Raw stats %s -> %+v\n", url, rawStats)
 	return rawStats, nil
+}
+
+func determineStatus(raw *RawStats) models.Status {
+	switch {
+	case raw.IsUp && raw.StatusCode == raw.ExpectedStatusCode:
+		return models.StatusUp
+	case raw.IsUp && raw.StatusCode != raw.ExpectedStatusCode:
+		return models.StatusError
+	case !raw.IsUp && raw.StatusCode == http.StatusRequestTimeout:
+		return models.StatusTimeout
+	case !raw.IsUp:
+		return models.StatusDown
+	default:
+		return models.StatusUnknown
+	}
 }

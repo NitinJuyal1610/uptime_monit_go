@@ -205,7 +205,6 @@ func (s *StatHandler) GetDetailedTimeGraph(w http.ResponseWriter, r *http.Reques
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	fmt.Println(w, "Monitor ID: %d, StartDate: %s, EndDate: %s\n", monitorId, startDate, endDate)
 	lineSnippet, err := s.statService.CreateDetailedTimeGraph(monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch detailed time graph %v", err)

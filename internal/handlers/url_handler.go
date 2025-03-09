@@ -59,11 +59,12 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 	expectedStatusCode, _ := strconv.Atoi(r.FormValue("status_code"))
 	timeoutSeconds, _ := strconv.Atoi(r.FormValue("timeout_seconds"))
 	collectDetailedDate, _ := strconv.ParseBool(r.FormValue("collect_detailed_data"))
+	maxFailThreshold, _ := strconv.Atoi(r.FormValue("max_fail_threshold"))
+	alertEmail := r.FormValue("alert_email")
 	if url == "" {
 		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
 		return
 	}
-
 	// Validate URL
 	if !validateURL(url) {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
@@ -89,6 +90,8 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 		Status:              models.StatusUnknown,
 		TimeoutSeconds:      timeoutSeconds,
 		CollectDetailedData: collectDetailedDate || false,
+		MaxFailThreshold:    maxFailThreshold,
+		AlertEmail:          alertEmail,
 	}
 
 	entityId, err := uh.urlService.CreateUrl(urlMonitor)
