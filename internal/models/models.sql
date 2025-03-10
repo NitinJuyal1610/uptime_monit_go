@@ -29,5 +29,12 @@ CREATE TABLE monitor_checks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email STRING NOT NULL,
+    password STRING NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
 CREATE INDEX idx_monitor_checks_monitor ON monitor_checks (monitor_id, is_up);
 CREATE INDEX idx_monitor_checks_response_time ON monitor_checks (monitor_id, response_time);

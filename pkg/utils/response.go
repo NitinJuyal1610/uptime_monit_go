@@ -6,8 +6,8 @@ import (
 )
 
 type JSONResponse struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Message string `json:"message"`
+	Data    any    `json:"data"`
 }
 
 func SendJSONResponse(w http.ResponseWriter, status int, res JSONResponse) {
