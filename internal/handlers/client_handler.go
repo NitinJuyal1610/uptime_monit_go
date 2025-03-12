@@ -1,44 +1,24 @@
 package handler
 
 import (
-	"fmt"
-	"html/template"
 	"net/http"
-	"path/filepath"
+	templates "nitinjuyal1610/uptimeMonitor/web"
 )
 
 type ClientHandler struct {
-	//------TODO
+	tempateManager *templates.TemplateManager
 }
 
-func NewClientHandler() *ClientHandler {
-	return &ClientHandler{}
+func NewClientHandler(tm *templates.TemplateManager) *ClientHandler {
+	return &ClientHandler{
+		tempateManager: tm,
+	}
 }
 
 func (gh *ClientHandler) RenderDashboard(w http.ResponseWriter, r *http.Request) {
-	//------server html
-	templatePath, err := filepath.Abs("web/templates/index.html")
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Println("Error resolving template path:", err)
-		return
-	}
+	gh.tempateManager.Render(w, "index.html", map[string]any{})
+}
 
-	// Parse template
-	temp, err := template.ParseFiles(templatePath)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Println("Error parsing template:", err)
-		return
-	}
-
-	// Set Content-Type header
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	// Execute template
-	err = temp.Execute(w, nil)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Println("Error executing template:", err)
-	}
+func (gh *ClientHandler) RenderLogin(w http.ResponseWriter, r *http.Request) {
+	gh.tempateManager.Render(w, "auth.html", map[string]any{})
 }

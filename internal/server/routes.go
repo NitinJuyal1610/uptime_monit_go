@@ -3,6 +3,10 @@ package server
 import (
 	"net/http"
 	handler "nitinjuyal1610/uptimeMonitor/internal/handlers"
+	customMiddleware "nitinjuyal1610/uptimeMonitor/internal/middlewares"
+	"nitinjuyal1610/uptimeMonitor/internal/session"
+	"os"
+
 	templates "nitinjuyal1610/uptimeMonitor/web"
 
 	"github.com/go-chi/chi/v5"
@@ -10,22 +14,26 @@ import (
 )
 
 func (s *Server) SetupRoutes() http.Handler {
-	//chi routes and middlewares
+	//chi routes and middlewaresclear
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	// initialize handlers
+	// initialize MANAGERs
 	templateManager, _ := templates.NewManager()
-	clientHandler := handler.NewClientHandler()
+	sessionManager := session.NewSessionManager(os.Getenv("SESSION_SECRET"))
+
+	//custom middlewares
+	authMiddleware := customMiddleware.NewAuthMiddleware(sessionManager)
+	//initiate handlers
+	clientHandler := handler.NewClientHandler(templateManager)
 	urlHandler := handler.NewUrlHandler(s.Services.UrlService, templateManager)
 	statHandler := handler.NewStatHandler(s.Services.StatService, templateManager)
-	authHandler := handler.NewAuthHandler(s.Services.AuthService, templateManager)
+	authHandler := handler.NewAuthHandler(s.Services.AuthService, templateManager, sessionManager)
 	//routes
 	r.Get("/", clientHandler.RenderDashboard)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
 	r.Route("/", func(r chi.Router) {
-
-		r.Use(AuthMiddleware)
+		r.Use(authMiddleware.Authenticate)
 
 		// monitor routes fine
 		r.Post("/api/monitors", urlHandler.CreateURLMonitor)
@@ -39,6 +47,8 @@ func (s *Server) SetupRoutes() http.Handler {
 		r.Get("/api/monitors/{id}/uptime-graph", statHandler.GetUptimeGraph)
 		r.Get("/api/monitors/{id}/detailed-time-graph", statHandler.GetDetailedTimeGraph)
 	})
+
+	r.Get("/login", clientHandler.RenderLogin)
 
 	//now auth routes
 	r.Post("/api/auth/login", authHandler.Login)

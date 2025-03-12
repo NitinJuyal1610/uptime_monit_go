@@ -15,18 +15,18 @@ func NewAuthService(userRepo repository.UserRepository) *AuthService {
 	return &AuthService{userRepo}
 }
 
-func (as *AuthService) Login(email, password string) (string, error) {
+func (as *AuthService) Login(email, password string) error {
 	existingUser, err := as.userRepo.GetUserByEmail(email)
 	if err != nil {
-		return "", fmt.Errorf("user with this email does not exist")
+		return fmt.Errorf("user with this email does not exist")
 	}
 	//compare password
 	isCorrect := utils.CheckPasswordHash(password, existingUser.Password)
 	if !isCorrect {
-		return "", fmt.Errorf("incorrect password")
+		return fmt.Errorf("incorrect password")
 	}
 	//generate token
-	return utils.CreateJwtToken(existingUser.Id)
+	return nil
 }
 
 func (as *AuthService) SignUp(user *models.User) (int, error) {

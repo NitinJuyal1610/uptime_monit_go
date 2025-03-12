@@ -9,18 +9,18 @@ import (
 	"reflect"
 )
 
-//go:embed templates/**/*.html
+//go:embed templates/*.html templates/**/*.html
 var templateFS embed.FS
 
 type TemplateManager struct {
 	templates *template.Template
 }
 
-func dict(values ...interface{}) (map[string]interface{}, error) {
+func dict(values ...any) (map[string]any, error) {
 	if len(values)%2 != 0 {
 		return nil, errors.New("invalid dict call")
 	}
-	dict := make(map[string]interface{}, len(values)/2)
+	dict := make(map[string]any, len(values)/2)
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)
 		if !ok {
@@ -55,19 +55,23 @@ func len(v any) int {
 }
 
 func NewManager() (*TemplateManager, error) {
-
 	tmpl := template.New("root").Funcs(template.FuncMap{
 		"dict": dict,
 		"add":  add,
 		"mod":  mod,
 		"mul":  mul,
 	})
-
-	tmpl, err := tmpl.ParseFS(templateFS, "templates/**/*.html")
+	tmpl, err := tmpl.ParseFS(templateFS, "templates/*.html", "templates/**/*.html")
 	if err != nil {
 		fmt.Printf("Error parsing templates: %v", err)
 		return nil, err
 	}
+
+	fmt.Println("Available templates:")
+	for _, tmpl := range tmpl.Templates() {
+		fmt.Println("-", tmpl.Name())
+	}
+
 	return &TemplateManager{templates: tmpl}, nil
 }
 
@@ -75,8 +79,8 @@ func (m *TemplateManager) Render(w http.ResponseWriter, name string, data interf
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	err := m.templates.ExecuteTemplate(w, name, data)
 	if err != nil {
-		http.Error(w, "Error rendering template", http.StatusInternalServerError)
-		fmt.Printf("Template render error (%s): %v", name, err)
+		http.Error(w, "Error rendering template \n", http.StatusInternalServerError)
+		fmt.Printf("Template render error (%s): %v \n", name, err)
 	}
 	return err
 }
