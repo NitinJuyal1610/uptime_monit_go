@@ -9,6 +9,7 @@ import (
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
 	templates "nitinjuyal1610/uptimeMonitor/web"
+	"slices"
 	"strconv"
 	"time"
 
@@ -149,4 +150,32 @@ func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	utils.SendJSONResponse(w, http.StatusOK, res)
+}
+
+func (uh *UrlHandler) UpdateMonitorStatus(w http.ResponseWriter, r *http.Request) {
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	status := r.FormValue("status")
+	validStatus := []string{"PAUSED", "UNKNOWN"}
+
+	if !slices.Contains(validStatus, status) {
+		http.Error(w, "Invalid Status", http.StatusBadRequest)
+		return
+	}
+	err = uh.urlService.UpdateMonitorStatus(id, status)
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to Update monitor status: %v", err), http.StatusBadRequest)
+		return
+	}
+	uh.templateManager.Render(w, "service-status.html", map[string]interface{}{
+		"Status": status,
+	})
+
 }

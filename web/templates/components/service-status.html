@@ -1,0 +1,13 @@
+<div id="service-status" class="px-4 py-2 rounded-lg text-white text-sm font-medium
+{{ if eq .Status "UP" }} bg-emerald-500
+{{ else if eq .Status "SLOW" }} bg-yellow-500
+{{ else if eq .Status "TIMEOUT" }} bg-orange-500
+{{ else if or (eq .Status "ERROR") (eq .Status "SSL_ERROR") }} bg-red-500
+{{ else if or (eq .Status "DOWN") (eq .Status "DNS_FAILURE") }} bg-red-600
+{{ else if or (eq .Status "UNKNOWN") (eq .Status "PAUSED") }} bg-gray-500
+{{ else if eq .Status "PENDING" }} bg-blue-500
+{{ else if eq .Status "DELETED" }} bg-gray-700
+{{else }} bg-gray-700
+{{ end }}">
+Status: {{ if .Status }} {{.Status}}{{else}} UNKNOWN {{end}}
+</div>

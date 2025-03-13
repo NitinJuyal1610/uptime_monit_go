@@ -39,6 +39,7 @@ func (s *Server) SetupRoutes() http.Handler {
 		r.Post("/api/monitors", urlHandler.CreateURLMonitor)
 		r.Get("/api/monitors", urlHandler.GetURLMonitors)
 		r.Get("/api/monitors/{id}", urlHandler.GetMonitorById)
+		r.Put("/api/monitors/{id}/status", urlHandler.UpdateMonitorStatus)
 
 		// stats route fine
 		r.Get("/api/monitors/{id}/stats", statHandler.GetMonitorStats)

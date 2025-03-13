@@ -38,6 +38,7 @@ type MonitorStatsResponse struct {
 	UptimePercentage      float64 `json:"uptime_percentage"`
 	DailyUptimePercentage float64 `json:"daily_uptime_percentage"`
 	DailyAvgResponseTime  float64 `json:"daily_avg_response_time"`
+	MonitorId             int     `json:"monitor_id"`
 }
 
 type PageData struct {
@@ -61,6 +62,7 @@ func (s *StatHandler) GetMonitorStats(w http.ResponseWriter, r *http.Request) {
 	var res MonitorStatsResponse
 	if result != nil {
 		res = MonitorStatsResponse{
+			MonitorId:             monitorId,
 			Url:                   result.Url,
 			Status:                result.Status,
 			LastChecked:           utils.TimeAgo(result.LastChecked),

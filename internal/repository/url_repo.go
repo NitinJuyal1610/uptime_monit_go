@@ -247,7 +247,7 @@ func (u *UrlRepositoryPg) Update(id int, urlMonitor *models.UrlMonitors) error {
 	}
 
 	fields := []string{}
-	args := []interface{}{}
+	args := []any{}
 	argIndex := 1
 
 	if urlMonitor.Status != "" {

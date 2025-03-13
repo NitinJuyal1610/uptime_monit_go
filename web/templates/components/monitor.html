@@ -15,55 +15,57 @@ class="monitor-item bg-gray-900 border
   {{else if eq .Monitor.Status "UNKNOWN"}} border-gray-500 
   {{else}} border-orange-500 
   {{end}} 
-  rounded-2xl p-5 cursor-pointer shadow-lg transition hover:bg-gray-800"
+  rounded-2xl p-5 cursor-pointer shadow-lg transition hover:bg-gray-800 relative"
 >
-<div class="flex items-center justify-between" >
-  <span class="font-semibold text-white text-lg truncate">{{.Monitor.Url}}</span>
-  <span
-    class="w-4 h-4 rounded-full shadow-lg ring-2 animate-pulse 
-      {{if eq .Monitor.Status "UP"}} bg-emerald-500 border-emerald-500 ring-emerald-300  
-      {{else if or (eq .Monitor.Status "DOWN") (eq .Monitor.Status "TIMEOUT")}} bg-red-500 border-red-500 ring-red-300 
-      {{else if eq .Monitor.Status "UNKNOWN"}} bg-gray-500 border-gray-500 ring-gray-300 
-      {{else}} bg-orange-500 border-orange-500 ring-orange-300 
-      {{end}}"
-  ></span>
-</div>
-<div class="flex items-center justify-between text-gray-400 text-sm mt-3">
-  <span class="flex items-center gap-1">
-    ⏳ <span>Check every {{.Monitor.FrequencyMinutes}}m</span>
-  </span>
-  <span class="flex items-center gap-1">
-    ⏱ <span>Timeout: {{.Monitor.TimeoutSeconds}}s</span>
-  </span>
+
+  <div class="flex items-center justify-between" >
+    <span class="font-semibold text-white text-lg truncate">{{.Monitor.Url}}</span>
+    <span
+      class="w-4 h-4 rounded-full shadow-lg ring-2 animate-pulse 
+        {{if eq .Monitor.Status "UP"}} bg-emerald-500 border-emerald-500 ring-emerald-300  
+        {{else if or (eq .Monitor.Status "DOWN") (eq .Monitor.Status "TIMEOUT")}} bg-red-500 border-red-500 ring-red-300 
+        {{else if eq .Monitor.Status "UNKNOWN"}} bg-gray-500 border-gray-500 ring-gray-300 
+        {{else}} bg-orange-500 border-orange-500 ring-orange-300 
+        {{end}}"
+    ></span>
+  </div>
+  <div class="flex items-center justify-between text-gray-400 text-sm mt-3">
+    <span class="flex items-center gap-1">
+      ⏳ <span>Check every {{.Monitor.FrequencyMinutes}}m</span>
+    </span>
+    <span class="flex items-center gap-1">
+      ⏱ <span>Timeout: {{.Monitor.TimeoutSeconds}}s</span>
+    </span>
+  </div>
+
+  <!-- First API call -->
+  <div 
+    hx-get="/api/monitors/{{.Monitor.ID}}/stats"
+    hx-target="#stat-summary"
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+  </div>
+
+  <!-- Second API call -->
+  <div
+    hx-get="/api/monitors/{{.Monitor.ID}}/avg-response-graph"
+    hx-target="#avg-response-chart"
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+  </div>
+
+  <!-- Third API call -->
+  <div
+    hx-get="/api/monitors/{{.Monitor.ID}}/uptime-graph"
+    hx-target="#uptime-chart"
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+  </div>
+
+  <!-- Fourth API Call -->
+  <div
+    hx-get="/api/monitors/{{.Monitor.ID}}/detailed-time-graph"
+    hx-target="#detailed-time-chart"
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}" >
+  </div>
 </div>
 
-<!-- First API call -->
-<div 
-  hx-get="/api/monitors/{{.Monitor.ID}}/stats"
-  hx-target="#stat-summary"
-  hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
-</div>
-
-<!-- Second API call -->
-<div
-  hx-get="/api/monitors/{{.Monitor.ID}}/avg-response-graph"
-  hx-target="#avg-response-chart"
-  hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
-</div>
-
-<!-- Third API call -->
-<div
-  hx-get="/api/monitors/{{.Monitor.ID}}/uptime-graph"
-  hx-target="#uptime-chart"
-  hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
-</div>
-
-<!-- Fourth API Call -->
-<div
-  hx-get="/api/monitors/{{.Monitor.ID}}/detailed-time-graph"
-  hx-target="#detailed-time-chart"
-  hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}" >
-</div>
-
-</div>
 {{end}}
+

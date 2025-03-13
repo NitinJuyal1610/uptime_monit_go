@@ -301,6 +301,13 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 	return rawStats, nil
 }
 
+func (us *UrlService) UpdateMonitorStatus(id int, status string) error {
+	updateMontior := &models.UrlMonitors{
+		Status: models.Status(status),
+	}
+	return us.urlRepo.Update(id, updateMontior)
+}
+
 func determineStatus(raw *RawStats) models.Status {
 	switch {
 	case raw.IsUp && raw.StatusCode == raw.ExpectedStatusCode:
