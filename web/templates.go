@@ -9,7 +9,8 @@ import (
 	"reflect"
 )
 
-//go:embed templates/*.html templates/**/*.html
+//go:embed templates/*.html templates/*/*.html templates/*/*/*.html
+
 var templateFS embed.FS
 
 type TemplateManager struct {
@@ -61,15 +62,14 @@ func NewManager() (*TemplateManager, error) {
 		"mod":  mod,
 		"mul":  mul,
 	})
-	tmpl, err := tmpl.ParseFS(templateFS, "templates/*.html", "templates/**/*.html")
+	tmpl, err := tmpl.ParseFS(templateFS, "templates/*.html", "templates/*/*.html", "templates/*/*/*.html")
+
+	// for _, val := range tmpl.Templates() {
+	// 	fmt.Println(val.Name())
+	// }
 	if err != nil {
 		fmt.Printf("Error parsing templates: %v", err)
 		return nil, err
-	}
-
-	fmt.Println("Available templates:")
-	for _, tmpl := range tmpl.Templates() {
-		fmt.Println("-", tmpl.Name())
 	}
 
 	return &TemplateManager{templates: tmpl}, nil

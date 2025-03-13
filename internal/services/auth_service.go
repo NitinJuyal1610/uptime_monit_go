@@ -15,18 +15,21 @@ func NewAuthService(userRepo repository.UserRepository) *AuthService {
 	return &AuthService{userRepo}
 }
 
-func (as *AuthService) Login(email, password string) error {
+func (as *AuthService) Login(email, password string) (int, error) {
 	existingUser, err := as.userRepo.GetUserByEmail(email)
+
 	if err != nil {
-		return fmt.Errorf("user with this email does not exist")
+		fmt.Println(err)
+		return 0, fmt.Errorf("user with this email does not exist")
 	}
+
 	//compare password
 	isCorrect := utils.CheckPasswordHash(password, existingUser.Password)
 	if !isCorrect {
-		return fmt.Errorf("incorrect password")
+		return 0, fmt.Errorf("incorrect password")
 	}
 	//generate token
-	return nil
+	return existingUser.Id, nil
 }
 
 func (as *AuthService) SignUp(user *models.User) (int, error) {

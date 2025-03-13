@@ -29,12 +29,12 @@ func (s *Server) SetupRoutes() http.Handler {
 	statHandler := handler.NewStatHandler(s.Services.StatService, templateManager)
 	authHandler := handler.NewAuthHandler(s.Services.AuthService, templateManager, sessionManager)
 	//routes
-	r.Get("/", clientHandler.RenderDashboard)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
 	r.Route("/", func(r chi.Router) {
 		r.Use(authMiddleware.Authenticate)
 
+		r.Get("/", clientHandler.RenderDashboard)
 		// monitor routes fine
 		r.Post("/api/monitors", urlHandler.CreateURLMonitor)
 		r.Get("/api/monitors", urlHandler.GetURLMonitors)
@@ -46,6 +46,9 @@ func (s *Server) SetupRoutes() http.Handler {
 		r.Get("/api/monitors/{id}/stats", statHandler.GetMonitorStats)
 		r.Get("/api/monitors/{id}/uptime-graph", statHandler.GetUptimeGraph)
 		r.Get("/api/monitors/{id}/detailed-time-graph", statHandler.GetDetailedTimeGraph)
+
+		//
+		r.Post("/api/auth/logout", authHandler.Logout)
 	})
 
 	r.Get("/login", clientHandler.RenderLogin)

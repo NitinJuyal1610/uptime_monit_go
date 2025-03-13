@@ -125,7 +125,7 @@ func (s *StatHandler) GetAvgResponseGraph(w http.ResponseWriter, r *http.Request
 		Script:  template.HTML(lineSnippet.Script),
 	}
 
-	s.templateManager.Render(w, "chart-container.html", data)
+	s.templateManager.Render(w, "avg-response-chart.html", data)
 }
 
 func (s *StatHandler) GetUptimeGraph(w http.ResponseWriter, r *http.Request) {
@@ -220,5 +220,5 @@ func (s *StatHandler) GetDetailedTimeGraph(w http.ResponseWriter, r *http.Reques
 		Script:  template.HTML(lineSnippet.Script),
 	}
 
-	s.templateManager.Render(w, "chart-container.html", data)
+	s.templateManager.Render(w, "detailed-time-chart.html", data)
 }

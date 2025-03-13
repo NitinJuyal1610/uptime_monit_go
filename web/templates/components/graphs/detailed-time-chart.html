@@ -1,0 +1,15 @@
+<div
+  class="mt-6 p-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-lg w-full transition-transform duration-300 ease-in-out hover:translate-y-[-10px] hover:shadow-2xl transform hover:scale-[1.02]"
+>
+  <div
+    class="relative w-full"
+    hx-get="/api/monitors/{itemId}/detailed-time-graph"
+    hx-include="[name='start_date'], [name='end_date']"
+    hx-trigger="click from:#apply-filters"
+    hx-swap="innerHTML"
+    hx-target="#detailed-time-chart"
+    hx-vals="js:{ days: getSelectedDays()?.toString() || '', itemId: getSelectedMonitorId()}"
+  >
+    <div class="relative w-full">{{.Element}} {{.Script}}</div>
+  </div>
+</div>

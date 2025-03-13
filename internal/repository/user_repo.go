@@ -20,9 +20,9 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (repo *UserRepositoryPg) CreateUser(user *models.User) (int, error) {
-	query := `INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id`
+	query := `INSERT INTO users (email, password, name) VALUES ($1, $2, $3) RETURNING id`
 	var userID int
-	err := repo.db.QueryRow(query, user.Email, user.Password).Scan(&userID)
+	err := repo.db.QueryRow(query, user.Email, user.Password, user.Name).Scan(&userID)
 	if err != nil {
 		return 0, err
 	}
@@ -30,9 +30,9 @@ func (repo *UserRepositoryPg) CreateUser(user *models.User) (int, error) {
 }
 
 func (repo *UserRepositoryPg) GetUserByEmail(email string) (*models.User, error) {
-	query := `SELECT id, email, password FROM users WHERE email = $1`
+	query := `SELECT id, email,name, password FROM users WHERE email = $1`
 	user := &models.User{}
-	err := repo.db.QueryRow(query, email).Scan(&user.Id, &user.Email, &user.Password)
+	err := repo.db.QueryRow(query, email).Scan(&user.Id, &user.Email, &user.Name, &user.Password)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("user not found")

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	middleware "nitinjuyal1610/uptimeMonitor/internal/middlewares"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
@@ -41,11 +42,8 @@ func validateURL(inputURL string) bool {
 }
 
 func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
 
+	userId := r.Context().Value(middleware.UserKey)
 	// Parse form data
 	err := r.ParseForm()
 	if err != nil {
@@ -92,6 +90,7 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 		CollectDetailedData: collectDetailedDate || false,
 		MaxFailThreshold:    maxFailThreshold,
 		AlertEmail:          alertEmail,
+		UserId:              userId.(int),
 	}
 
 	entityId, err := uh.urlService.CreateUrl(urlMonitor)
@@ -111,10 +110,12 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 
 func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 
+	userId := r.Context().Value(middleware.UserKey).(int)
+
 	//get query param for status
 	status := r.URL.Query().Get("status")
 	keyword := r.URL.Query().Get("q")
-	values, err := uh.urlService.GetAllUrl(status, keyword)
+	values, err := uh.urlService.GetAllUrl(status, keyword, userId)
 
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch URL Monitors %v", err)

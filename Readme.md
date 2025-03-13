@@ -6,11 +6,7 @@
 Input Validation
 Default Values
 Precalculated Stats
-Graphs
 Multi Url Stats
-Date Range
-Multiple Failed checks can mark sevice as down(threshold for now its 1)
-Batching Of Scheduler Ops
 Dockerize
 Deploy To Cloud
 Refractoring
@@ -26,5 +22,11 @@ Refractoring
 5. Summary Stats Integration ✅
 6. Uptime trend color codes ✅
 7. Performance chart ttfb vs total RT ✅
+8. Batching Of Scheduler Ops✅
+9. Multiple Failed checks can mark sevice as down ✅
+10. Alert on email ✅
+11. Graphs (TTFB vs response time combined ) and avg response time graph✅
+12. Uptime bars last 30days✅
+13. Date Range Filter for graphs ✅
 
 ```

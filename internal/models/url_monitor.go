@@ -30,6 +30,7 @@ type UrlMonitors struct {
 	MaxFailThreshold    int       `json:"max_fail_threshold"`
 	ConsecutiveFails    int       `json:"consecutive_fails"`
 	AlertEmail          string    `json:"alert_email"`
+	UserId              int       `json:"user_id"`
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }

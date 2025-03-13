@@ -1,6 +1,7 @@
 CREATE TABLE url_monitors(
     id SERIAL PRIMARY KEY,
     url TEXT NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
     frequency_minutes INTEGER NOT NULL,
     timeout_seconds INTEGER,
     last_checked TIMESTAMP,
@@ -12,7 +13,6 @@ CREATE TABLE url_monitors(
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 
 
 CREATE TABLE monitor_checks (
@@ -31,8 +31,9 @@ CREATE TABLE monitor_checks (
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    email STRING NOT NULL,
-    password STRING NOT NULL,
+    email VARCHAR(50) NOT NULL,
+    name VARCHAR(50) NOT NULL, 
+    password VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )

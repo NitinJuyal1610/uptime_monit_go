@@ -9,7 +9,7 @@ import (
 
 type UrlRepository interface {
 	Create(urlMonitor *models.UrlMonitors) (int, error)
-	GetAll(status string, keyword string) ([]*models.UrlMonitors, error)
+	GetAll(status string, keyword string, userId int) ([]*models.UrlMonitors, error)
 	GetById(id int) (*models.UrlMonitors, error)
 	GetDueMonitors() ([]*models.UrlMonitors, error)
 	Update(id int, urlMonitor *models.UrlMonitors) error
@@ -37,9 +37,10 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 		expected_status_code,
 		collect_detailed_data,
 		max_fail_threshold,
-		alert_email
+		alert_email,
+		user_id
 	) 
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,$10) 
 	RETURNING id
 `
 
@@ -54,6 +55,7 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 		urlMonitor.CollectDetailedData,
 		urlMonitor.MaxFailThreshold,
 		urlMonitor.AlertEmail,
+		urlMonitor.UserId,
 	).Scan(&entityId)
 
 	if err != nil {
@@ -63,25 +65,23 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 	return entityId, nil
 }
 
-func (u *UrlRepositoryPg) GetAll(status string, keyword string) ([]*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetAll(status string, keyword string, userId int) ([]*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, REGEXP_REPLACE(url, '^https?://', '', 'i') AS trimmed_url, status, frequency_minutes, timeout_seconds, 
-			last_checked, expected_status_code, collect_detailed_data ,created_at, updated_at 
-		FROM url_monitors`
+			last_checked, expected_status_code, collect_detailed_data, created_at, updated_at 
+		FROM url_monitors WHERE user_id = $1`
 
 	var args []any
+	args = append(args, userId)
+
 	if status != "" {
-		query += ` WHERE status=$1`
+		query += ` AND status = $` + fmt.Sprint(len(args)+1)
 		args = append(args, status)
 	}
 
 	if keyword != "" {
-		if len(args) > 0 {
-			query += ` AND url LIKE $` + fmt.Sprint(len(args)+1)
-		} else {
-			query += ` WHERE url LIKE $1`
-		}
+		query += ` AND url LIKE $` + fmt.Sprint(len(args)+1)
 		args = append(args, "%"+keyword+"%")
 	}
 

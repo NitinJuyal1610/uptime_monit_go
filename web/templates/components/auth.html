@@ -78,7 +78,7 @@
         <!-- Login Form -->
         <div id="login-form" class="p-6">
           <form
-            hx-post="/api/login"
+            hx-post="/api/auth/login"
             hx-swap="outerHTML"
             hx-indicator="#login-spinner"
           >
@@ -170,7 +170,7 @@
         <!-- Signup Form -->
         <div id="signup-form" class="p-6 hidden">
           <form
-            hx-post="/api/signup"
+            hx-post="/api/auth/signup"
             hx-swap="outerHTML"
             hx-indicator="#signup-spinner"
           >
@@ -184,7 +184,7 @@
                   name="name"
                   required
                   class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="John Doe"
+                  placeholder="Raj Kumar"
                 />
               </div>
 
@@ -208,19 +208,6 @@
                 <input
                   type="password"
                   name="password"
-                  required
-                  class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium mb-1 text-gray-300"
-                  >Confirm Password</label
-                >
-                <input
-                  type="password"
-                  name="confirm_password"
                   required
                   class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   placeholder="••••••••"

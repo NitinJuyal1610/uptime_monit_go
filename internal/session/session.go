@@ -37,7 +37,8 @@ func (sm *SessionManager) Destroy(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (sm *SessionManager) GetUserID(r *http.Request) (int, bool) {
-	session, _ := sm.store.Get(r, "auth_session")
-	userID, ok := session.Values["user_id"].(int)
+	session, _ := sm.store.Get(r, "auth-session")
+
+	userID, ok := session.Values["userId"].(int)
 	return userID, ok
 }
