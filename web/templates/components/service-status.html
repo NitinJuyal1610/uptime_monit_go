@@ -1,13 +1,52 @@
-<div id="service-status" class="px-4 py-2 rounded-lg text-white text-sm font-medium
-{{ if eq .Status "UP" }} bg-emerald-500
-{{ else if eq .Status "SLOW" }} bg-yellow-500
-{{ else if eq .Status "TIMEOUT" }} bg-orange-500
-{{ else if or (eq .Status "ERROR") (eq .Status "SSL_ERROR") }} bg-red-500
-{{ else if or (eq .Status "DOWN") (eq .Status "DNS_FAILURE") }} bg-red-600
-{{ else if or (eq .Status "UNKNOWN") (eq .Status "PAUSED") }} bg-gray-500
-{{ else if eq .Status "PENDING" }} bg-blue-500
-{{ else if eq .Status "DELETED" }} bg-gray-700
-{{else }} bg-gray-700
-{{ end }}">
-Status: {{ if .Status }} {{.Status}}{{else}} UNKNOWN {{end}}
-</div>
+<div  id="service-status"  class="flex items-center space-x-4">
+    <button 
+      hx-put="/api/monitors/{{.MonitorId}}/status"
+      hx-include="[name='status']"
+      hx-target="#service-status"
+      hx-swap="outerHTML"
+      class="flex items-center space-x-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200">
+      
+      {{ if ne .Status "PAUSED" }}
+      <svg xmlns="http://www.w3.org/2000/svg" 
+           class="h-5 w-5" 
+           viewBox="0 0 24 24" 
+           fill="none" 
+           stroke="currentColor" 
+           stroke-width="2" 
+           stroke-linecap="round" 
+           stroke-linejoin="round">
+        <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+        <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+      </svg>
+      <input type="hidden" name="status" value="PAUSED">
+      <span>Pause</span>
+      {{ else }}
+      <svg xmlns="http://www.w3.org/2000/svg" 
+           class="h-5 w-5" 
+           viewBox="0 0 24 24" 
+           fill="none" 
+           stroke="currentColor" 
+           stroke-width="2" 
+           stroke-linecap="round" 
+           stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+      <input type="hidden" name="status" value="UNKNOWN">
+      <span>Resume</span>
+      {{ end }}
+    </button>
+    
+    <div class="px-4 py-2 rounded-lg text-white text-sm font-medium
+      {{ if eq .Status "UP" }} bg-emerald-500
+      {{ else if eq .Status "SLOW" }} bg-yellow-500
+      {{ else if eq .Status "TIMEOUT" }} bg-orange-500
+      {{ else if or (eq .Status "ERROR") (eq .Status "SSL_ERROR") }} bg-red-500
+      {{ else if or (eq .Status "DOWN") (eq .Status "DNS_FAILURE") }} bg-red-600
+      {{ else if or (eq .Status "UNKNOWN") (eq .Status "PAUSED") }} bg-gray-500
+      {{ else if eq .Status "PENDING" }} bg-blue-500
+      {{ else if eq .Status "DELETED" }} bg-gray-700
+      {{else }} bg-gray-700
+      {{ end }}">
+      Status: {{ if .Status }} {{.Status}}{{else}} UNKNOWN {{end}}
+    </div>
+  </div>

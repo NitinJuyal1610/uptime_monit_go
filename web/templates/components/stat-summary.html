@@ -7,7 +7,7 @@
       </div>
     </div>
     
-    <div class="flex items-center space-x-4">
+    <div  id="service-status"  class="flex items-center space-x-4">
       <button 
         hx-put="/api/monitors/{{.MonitorId}}/status"
         hx-include="[name='status']"
@@ -45,7 +45,7 @@
         {{ end }}
       </button>
       
-      <div id="service-status" class="px-4 py-2 rounded-lg text-white text-sm font-medium
+      <div class="px-4 py-2 rounded-lg text-white text-sm font-medium
         {{ if eq .Status "UP" }} bg-emerald-500
         {{ else if eq .Status "SLOW" }} bg-yellow-500
         {{ else if eq .Status "TIMEOUT" }} bg-orange-500

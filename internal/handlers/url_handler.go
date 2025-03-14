@@ -174,8 +174,9 @@ func (uh *UrlHandler) UpdateMonitorStatus(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("Failed to Update monitor status: %v", err), http.StatusBadRequest)
 		return
 	}
-	uh.templateManager.Render(w, "service-status.html", map[string]interface{}{
-		"Status": status,
+	uh.templateManager.Render(w, "service-status.html", map[string]any{
+		"Status":    status,
+		"MonitorId": id,
 	})
 
 }
