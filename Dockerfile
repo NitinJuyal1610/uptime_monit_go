@@ -4,11 +4,11 @@ RUN adduser -D -s /bin/sh uptimego
 
 WORKDIR /app
 
-COPY ../go.mod ../go.sum ./
+COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY ../. .
+COPY . .
 
 RUN chown -R uptimego:uptimego /app
 

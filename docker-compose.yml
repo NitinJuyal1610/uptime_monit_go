@@ -1,0 +1,59 @@
+services:
+  go-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uptime-app
+    hostname: uptime-app
+    networks:
+      - upnet
+    ports:
+      - 8021:${PORT:-8080}
+    depends_on:
+      pgdb:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - PORT=${PORT:-8080}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-pguser}
+      - DB_PASSWORD=${DB_PASSWORD:?database password not set}
+      - DB_NAME=${DB_NAME:-postgres}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_PASS=${GMAIL_PASS}
+      - SESSION_SECRET=${SESSION_SECRET}
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  pgdb:
+    image: postgres:15-alpine
+    container_name: pgdb
+    hostname: db
+    networks:
+      - upnet
+    environment:
+      - POSTGRES_USER=${DB_USER:-pguser}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?database password not set}
+      - POSTGRES_DB=${DB_NAME:-postgres}
+    volumes:
+      - uptimepg:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-pguser} -d ${DB_NAME:-postgres}',
+        ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  uptimepg:
+
+networks:
+  upnet:
+    driver: bridge
