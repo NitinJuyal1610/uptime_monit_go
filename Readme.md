@@ -24,6 +24,7 @@ Uptime Monitor is a Golang-based project designed to track website availability 
 - **Pause Resume Montior processing**
 - **Session based Auth Flow**
 - **Performance improvement** using go concurrency
+- **Dockerization**
 
 ## TODO List
 
@@ -31,7 +32,6 @@ Uptime Monitor is a Golang-based project designed to track website availability 
 - **Default Values**
 - **Precalculated Stats**
 - **Multi-URL Stats Comparison**
-- **Dockerization**
 - **Cloud Deployment**
 - **Refactoring**
 
