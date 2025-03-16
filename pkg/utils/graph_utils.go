@@ -2,7 +2,6 @@ package utils
 
 import (
 	"nitinjuyal1610/uptimeMonitor/pkg/types"
-	"strings"
 	"time"
 
 	"github.com/go-echarts/go-echarts/v2/opts"
@@ -15,9 +14,9 @@ func FormatTimeData(data []*types.ResponseTimeStat) ([]opts.LineData, []string) 
 	items := make([]opts.LineData, 0, len(data))
 	keys := make([]string, 0, len(data))
 	for _, d := range data {
-		keys = append(keys, strings.TrimSuffix(d.Date, "T00:00:00Z"))
+		keys = append(keys, d.Date)
 		items = append(items, opts.LineData{
-			Name:  strings.TrimSuffix(d.Date, "T00:00:00Z"),
+			Name:  d.Date,
 			Value: d.AvgResponseTime * 1000,
 		})
 	}
@@ -62,7 +61,6 @@ func FillMissingUptimeStats(existingStats []*types.UptimeStat) []*types.UptimeSt
 	dateMap := make(map[string]*types.UptimeStat)
 
 	for _, stat := range existingStats {
-		stat.Date = strings.TrimSuffix(stat.Date, "T00:00:00Z")
 		dateMap[stat.Date] = stat
 	}
 

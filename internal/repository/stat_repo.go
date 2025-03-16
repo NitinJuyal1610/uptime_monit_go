@@ -31,7 +31,7 @@ func NewStatRepository(db *pgxpool.Pool) StatRepository {
 func (sr *StatRepositoryPg) GetAvgResponseData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.ResponseTimeStat, error) {
 	query := `
 		SELECT
-			DATE(timestamp) as date,
+			TO_CHAR(DATE(timestamp),'YYYY-MM-DD') as date,
 			mc.monitor_id ,
 			um.url,
 			COALESCE(ROUND(CAST(AVG(CASE WHEN mc.is_up = true THEN mc.response_time END) AS numeric), 3), 0.0) AS avg_response_time
@@ -78,7 +78,7 @@ func (sr *StatRepositoryPg) GetUptimeData(ctx context.Context, monitorId int, st
 			COALESCE (ROUND(
 				(COUNT(CASE WHEN is_up THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0)), 2
 			),0) AS uptime_percentage,
-			DATE(mc.timestamp) as date,
+			TO_CHAR(DATE(mc.timestamp),'YYYY-MM-DD') as date,
 			um.url
 		FROM monitor_checks mc
 		INNER JOIN url_monitors um on um.id = mc.monitor_id
