@@ -371,11 +371,20 @@
               hx-post="/api/monitors"
               hx-target="#monitor-list"
               hx-swap="beforeend"
+              hx-on::before-request="
+               let monitorList = document.getElementById('monitor-list');
+                if (monitorList.querySelector('.empty-state')) {
+                  this.setAttribute('hx-swap', 'innerHTML'); 
+                } else {
+                  this.setAttribute('hx-swap', 'beforeend'); 
+                }
+              "
               hx-on::after-request="
                 if (event.detail.successful) {
                   document.getElementById('add-monitor-modal').classList.add('hidden');
                   this.reset();
-                }"
+                }
+              "
             >
               <div class="space-y-4">
                 <div>

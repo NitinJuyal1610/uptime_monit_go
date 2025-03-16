@@ -4,7 +4,7 @@
 </script>
 {{end}} {{range $index, $monitor := .}} {{template "monitor-item" (dict "Index"
 $index "Monitor" $monitor)}} {{else}}
-<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
+<div class="empty-state bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
   <div class="mb-4">
     <svg
       xmlns="http://www.w3.org/2000/svg"
