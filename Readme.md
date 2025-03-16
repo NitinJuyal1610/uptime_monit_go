@@ -55,7 +55,7 @@ Uptime Monitor is a Golang-based project designed to track website availability 
 3. Set up environment variables in `.env` file:
    ```env
     PORT=8022
-    DB_HOST=postgres
+    DB_HOST=db
     DB_PORT=5432
     DB_USER=postgres_user
     DB_PASSWORD=postgres_pass
