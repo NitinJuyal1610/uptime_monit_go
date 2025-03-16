@@ -26,28 +26,39 @@ func (s *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if email == "" {
-		http.Error(w, "email is required", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `<div class="text-red-400 text-sm mb-2">Email is required</div>`)
 		return
 	}
 	if password == "" {
-		http.Error(w, "password is required", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `<div class="text-red-400 text-sm mb-2">Password is required</div>`)
 		return
 	}
 	userId, err := s.authService.Login(r.Context(), email, password)
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to login: %v", err), http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `<div class="text-red-400 text-sm mb-2">Invalid email or password</div>`)
 		return
 	}
+
 	// Create session
 	if err := s.sessionManager.Create(w, r, userId); err != nil {
 		log.Printf("Session creation failed for user %d: %v", userId, err)
-		http.Error(w, "Unable to create session", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/html")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `<div class="text-red-400 text-sm mb-2">Unable to create session</div>`)
 		return
 	}
+
 	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusOK)
 }
+
 
 func (s *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	//signup

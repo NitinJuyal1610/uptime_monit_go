@@ -49,7 +49,8 @@ class="monitor-item bg-gray-900 border
   <div
     hx-get="/api/monitors/{{.Monitor.ID}}/avg-response-graph"
     hx-target="#avg-response-chart"
-    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}">
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}"
+    hx-on::after-request="document.getElementById('filter-options').classList.remove('hidden')">
   </div>
 
   <!-- Third API call -->
@@ -63,7 +64,9 @@ class="monitor-item bg-gray-900 border
   <div
     hx-get="/api/monitors/{{.Monitor.ID}}/detailed-time-graph"
     hx-target="#detailed-time-chart"
-    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}" >
+    hx-trigger="{{if eq .Index 0}}load,{{end}} click from:#monitor-{{.Monitor.ID}}"
+    hx-on::after-request="document.getElementById('filter-options').classList.remove('hidden')"></div>
+    
   </div>
 </div>
 
