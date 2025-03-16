@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -20,23 +21,7 @@ type PostgresConfig struct {
 	SSLMode  string
 }
 
-func NewPostgresConnection() *pgxpool.Pool {
-
-	port, _ := strconv.Atoi(os.Getenv("DB_PORT"))
-
-	config := &PostgresConfig{
-		Host:     os.Getenv("DB_HOST"),
-		Port:     port,
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		DBName:   os.Getenv("DB_NAME"),
-		SSLMode:  "disable",
-	}
-	//
-	connStr := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=%s",
-		config.Host, config.Port, config.User, config.Password, config.DBName, config.SSLMode)
-
+func NewPostgresConnection(connStr string,dbPort int) *pgxpool.Pool {
 	poolConfig, err := pgxpool.ParseConfig(connStr)
 
 	if err != nil {
@@ -63,4 +48,21 @@ func NewPostgresConnection() *pgxpool.Pool {
 
 func CloseConnection(db *pgxpool.Pool) {
 	db.Close()
+}
+
+
+func RunMigrations(databaseURL string) error {
+
+	migrationURL := "file://migrations"
+	m, err := migrate.New(migrationURL, databaseURL)
+	if err != nil {
+		return fmt.Errorf("could not create migrate instance: %v", err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("could not run migrations: %v", err)
+	}
+
+	log.Println("Migrations completed successfully")
+	return nil
 }

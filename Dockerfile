@@ -21,6 +21,7 @@ FROM alpine:latest AS release-stage
 WORKDIR /
 
 COPY --from=build-stage  /app/uptime-go /
+COPY --from=build-stage /app/migrations /
 
 EXPOSE 8080
 

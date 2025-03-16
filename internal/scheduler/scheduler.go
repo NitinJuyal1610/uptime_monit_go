@@ -18,7 +18,7 @@ func NewScheduler(services *service.Services) *SchedulerService {
 
 	// _, err := sd.cron.AddFunc("CRON_TZ=UTC * * * * *", func() {
 	// 	log.Println("Running scheduled URL monitoring check...")
-	// 	if err := sd.urlService.ProcessDueMonitorURLs(); err != nil {
+	// 	if err := sd.urlService.ProcessDueMonitorURLs(context.Background()); err != nil {
 	// 		log.Println(err)
 	// 	}
 	// })
