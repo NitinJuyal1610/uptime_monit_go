@@ -33,7 +33,7 @@ func (s *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "password is required", http.StatusBadRequest)
 		return
 	}
-	userId, err := s.authService.Login(email, password)
+	userId, err := s.authService.Login(r.Context(), email, password)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to login: %v", err), http.StatusBadRequest)
@@ -75,7 +75,7 @@ func (s *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		Password: password,
 		Name:     name,
 	}
-	id, err := s.authService.SignUp(user)
+	id, err := s.authService.SignUp(r.Context(), user)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to signup: %v", err), http.StatusBadRequest)
 		return

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"nitinjuyal1610/uptimeMonitor/internal/models"
 	service "nitinjuyal1610/uptimeMonitor/internal/services"
+	"nitinjuyal1610/uptimeMonitor/pkg/types"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
 	templates "nitinjuyal1610/uptimeMonitor/web"
 	"strconv"
@@ -42,7 +42,7 @@ type MonitorStatsResponse struct {
 }
 
 type PageData struct {
-	UptimeStats []*models.UptimeStat
+	UptimeStats []*types.UptimeStat
 }
 
 func (s *StatHandler) GetMonitorStats(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +52,7 @@ func (s *StatHandler) GetMonitorStats(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-	result, err := s.statService.GetStatSummary(monitorId)
+	result, err := s.statService.GetStatSummary(r.Context(), monitorId)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch monitor stats %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
@@ -112,7 +112,7 @@ func (s *StatHandler) GetAvgResponseGraph(w http.ResponseWriter, r *http.Request
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	lineSnippet, err := s.statService.CreateAvgResponseGraph(monitorId, startDate, endDate)
+	lineSnippet, err := s.statService.CreateAvgResponseGraph(r.Context(), monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch average response graph %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
@@ -162,7 +162,7 @@ func (s *StatHandler) GetUptimeGraph(w http.ResponseWriter, r *http.Request) {
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	uptimeTrend, err := s.statService.CreateUptimeTrend(monitorId, startDate, endDate)
+	uptimeTrend, err := s.statService.CreateUptimeTrend(r.Context(), monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch uptime trend %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)
@@ -207,7 +207,7 @@ func (s *StatHandler) GetDetailedTimeGraph(w http.ResponseWriter, r *http.Reques
 		startDate = now.AddDate(0, 0, -days).Format("2006-01-02")
 	}
 
-	lineSnippet, err := s.statService.CreateDetailedTimeGraph(monitorId, startDate, endDate)
+	lineSnippet, err := s.statService.CreateDetailedTimeGraph(r.Context(), monitorId, startDate, endDate)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch detailed time graph %v", err)
 		http.Error(w, errStr, http.StatusBadRequest)

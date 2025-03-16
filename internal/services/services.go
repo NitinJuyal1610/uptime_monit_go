@@ -1,8 +1,9 @@
 package service
 
 import (
-	"database/sql"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // hold all services
@@ -12,7 +13,7 @@ type Services struct {
 	AuthService *AuthService
 }
 
-func NewServices(db *sql.DB) *Services {
+func NewServices(db *pgxpool.Pool) *Services {
 
 	urlRepo := repository.NewUrlRepository(db)
 	statRepo := repository.NewStatRepository(db)

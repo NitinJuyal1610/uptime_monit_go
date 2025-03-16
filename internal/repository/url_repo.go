@@ -1,30 +1,33 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UrlRepository interface {
-	Create(urlMonitor *models.UrlMonitors) (int, error)
-	GetAll(status string, keyword string, userId int) ([]*models.UrlMonitors, error)
-	GetById(id int) (*models.UrlMonitors, error)
-	GetDueMonitors() ([]*models.UrlMonitors, error)
-	Update(id int, urlMonitor *models.UrlMonitors) error
-	BulkUpdate(updates map[int]*models.UrlMonitors) error
+	Create(ctx context.Context, urlMonitor *models.UrlMonitors) (int, error)
+	GetAll(ctx context.Context, status string, keyword string, userId int) ([]*models.UrlMonitors, error)
+	GetById(ctx context.Context, id int) (*models.UrlMonitors, error)
+	GetDueMonitors(ctx context.Context) ([]*models.UrlMonitors, error)
+	Update(ctx context.Context, id int, urlMonitor *models.UrlMonitors) error
+	BulkUpdate(ctx context.Context, updates map[int]*models.UrlMonitors) error
 }
 
 type UrlRepositoryPg struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
-func NewUrlRepository(db *sql.DB) UrlRepository {
+func NewUrlRepository(db *pgxpool.Pool) UrlRepository {
 	return &UrlRepositoryPg{db}
 }
 
-func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
+func (u *UrlRepositoryPg) Create(ctx context.Context, urlMonitor *models.UrlMonitors) (int, error) {
 	var entityId int
 
 	createQuery := `
@@ -45,6 +48,7 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 `
 
 	err := u.db.QueryRow(
+		ctx,
 		createQuery,
 		urlMonitor.Url,
 		urlMonitor.FrequencyMinutes,
@@ -65,7 +69,7 @@ func (u *UrlRepositoryPg) Create(urlMonitor *models.UrlMonitors) (int, error) {
 	return entityId, nil
 }
 
-func (u *UrlRepositoryPg) GetAll(status string, keyword string, userId int) ([]*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetAll(ctx context.Context, status string, keyword string, userId int) ([]*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, REGEXP_REPLACE(url, '^https?://', '', 'i') AS trimmed_url, status, frequency_minutes, timeout_seconds, 
@@ -85,7 +89,7 @@ func (u *UrlRepositoryPg) GetAll(status string, keyword string, userId int) ([]*
 		args = append(args, "%"+keyword+"%")
 	}
 
-	rows, err := u.db.Query(query, args...)
+	rows, err := u.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -121,7 +125,7 @@ func (u *UrlRepositoryPg) GetAll(status string, keyword string, userId int) ([]*
 	return monitors, nil
 }
 
-func (u *UrlRepositoryPg) GetById(id int) (*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetById(ctx context.Context, id int) (*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
@@ -129,7 +133,7 @@ func (u *UrlRepositoryPg) GetById(id int) (*models.UrlMonitors, error) {
 		FROM url_monitors WHERE id = $1`
 
 	var monitor models.UrlMonitors
-	err := u.db.QueryRow(query, id).Scan(
+	err := u.db.QueryRow(ctx, query, id).Scan(
 		&monitor.ID,
 		&monitor.Url,
 		&monitor.Status,
@@ -151,7 +155,7 @@ func (u *UrlRepositoryPg) GetById(id int) (*models.UrlMonitors, error) {
 	return &monitor, nil
 }
 
-func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetByUrl(ctx context.Context, id int) (*models.UrlMonitors, error) {
 	query := `
 		SELECT 
 			id, url, status, frequency_minutes, timeout_seconds, 
@@ -159,7 +163,7 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 		FROM url_monitors WHERE id = $1`
 
 	var monitor models.UrlMonitors
-	err := u.db.QueryRow(query, id).Scan(
+	err := u.db.QueryRow(ctx, query, id).Scan(
 		&monitor.ID,
 		&monitor.Url,
 		&monitor.Status,
@@ -178,7 +182,7 @@ func (u *UrlRepositoryPg) GetByUrl(id int) (*models.UrlMonitors, error) {
 	return &monitor, nil
 }
 
-func (u *UrlRepositoryPg) GetDueMonitors() ([]*models.UrlMonitors, error) {
+func (u *UrlRepositoryPg) GetDueMonitors(ctx context.Context) ([]*models.UrlMonitors, error) {
 
 	query := `
 	 SELECT
@@ -205,7 +209,7 @@ func (u *UrlRepositoryPg) GetDueMonitors() ([]*models.UrlMonitors, error) {
     );
 	`
 
-	rows, err := u.db.Query(query)
+	rows, err := u.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -236,9 +240,9 @@ func (u *UrlRepositoryPg) GetDueMonitors() ([]*models.UrlMonitors, error) {
 	return dueMonitorUrls, nil
 }
 
-func (u *UrlRepositoryPg) Update(id int, urlMonitor *models.UrlMonitors) error {
+func (u *UrlRepositoryPg) Update(ctx context.Context, id int, urlMonitor *models.UrlMonitors) error {
 
-	existing, err := u.GetById(id)
+	existing, err := u.GetById(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error checking existing record: %w", err)
 	}
@@ -284,15 +288,13 @@ func (u *UrlRepositoryPg) Update(id int, urlMonitor *models.UrlMonitors) error {
 	query := fmt.Sprintf("UPDATE url_monitors SET %s WHERE id = $%d", strings.Join(fields, ", "), argIndex)
 	args = append(args, id)
 
-	result, err := u.db.Exec(query, args...)
+	result, err := u.db.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to update url monitor: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
+	rowsAffected := result.RowsAffected()
+
 	if rowsAffected == 0 {
 		return fmt.Errorf("no records updated, possibly due to no changes")
 	}
@@ -300,7 +302,7 @@ func (u *UrlRepositoryPg) Update(id int, urlMonitor *models.UrlMonitors) error {
 	return nil
 }
 
-func (u *UrlRepositoryPg) BulkUpdate(updates map[int]*models.UrlMonitors) error {
+func (u *UrlRepositoryPg) BulkUpdate(ctx context.Context, updates map[int]*models.UrlMonitors) error {
 	if len(updates) == 0 {
 		return nil
 	}
@@ -346,15 +348,12 @@ func (u *UrlRepositoryPg) BulkUpdate(updates map[int]*models.UrlMonitors) error 
 		allParams = append(allParams, id)
 	}
 
-	result, err := u.db.Exec(query, allParams...)
+	result, err := u.db.Exec(ctx, query, allParams...)
 	if err != nil {
 		return fmt.Errorf("failed to perform bulk update: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("error getting rows affected: %w", err)
-	}
+	rowsAffected := result.RowsAffected()
 
 	if rowsAffected == 0 {
 		return fmt.Errorf("no rows were updated")

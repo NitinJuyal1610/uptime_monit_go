@@ -1,14 +1,14 @@
 package utils
 
 import (
-	"nitinjuyal1610/uptimeMonitor/internal/models"
+	"nitinjuyal1610/uptimeMonitor/pkg/types"
 	"strings"
 	"time"
 
 	"github.com/go-echarts/go-echarts/v2/opts"
 )
 
-func FormatTimeData(data []*models.ResponseTimeStat) ([]opts.LineData, []string) {
+func FormatTimeData(data []*types.ResponseTimeStat) ([]opts.LineData, []string) {
 	if len(data) == 0 {
 		return []opts.LineData{{Value: 0}}, []string{"No Data"}
 	}
@@ -58,22 +58,22 @@ func DetermineBarColor(uptime float64) string {
 	}
 }
 
-func FillMissingUptimeStats(existingStats []*models.UptimeStat) []*models.UptimeStat {
-	dateMap := make(map[string]*models.UptimeStat)
+func FillMissingUptimeStats(existingStats []*types.UptimeStat) []*types.UptimeStat {
+	dateMap := make(map[string]*types.UptimeStat)
 
 	for _, stat := range existingStats {
 		stat.Date = strings.TrimSuffix(stat.Date, "T00:00:00Z")
 		dateMap[stat.Date] = stat
 	}
 
-	var filledStats []*models.UptimeStat
+	var filledStats []*types.UptimeStat
 	for i := 29; i >= 0; i-- {
 		date := time.Now().AddDate(0, 0, -i).Format("2006-01-02")
 
 		if stat, exists := dateMap[date]; exists {
 			filledStats = append(filledStats, stat)
 		} else {
-			filledStats = append(filledStats, &models.UptimeStat{
+			filledStats = append(filledStats, &types.UptimeStat{
 				Date:             date,
 				UptimePercentage: 0,
 				SuccessfulChecks: 0,

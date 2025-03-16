@@ -94,7 +94,7 @@ func (uh *UrlHandler) CreateURLMonitor(w http.ResponseWriter, r *http.Request) {
 		UserId:              userId.(int),
 	}
 
-	entityId, err := uh.urlService.CreateUrl(urlMonitor)
+	entityId, err := uh.urlService.CreateUrl(r.Context(), urlMonitor)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to create URL: %v", err), http.StatusInternalServerError)
 		return
@@ -116,7 +116,7 @@ func (uh *UrlHandler) GetURLMonitors(w http.ResponseWriter, r *http.Request) {
 	//get query param for status
 	status := r.URL.Query().Get("status")
 	keyword := r.URL.Query().Get("q")
-	values, err := uh.urlService.GetAllUrl(status, keyword, userId)
+	values, err := uh.urlService.GetAllUrl(r.Context(), status, keyword, userId)
 
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to fetch URL Monitors %v", err)
@@ -136,7 +136,7 @@ func (uh *UrlHandler) GetMonitorById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	monitor, err := uh.urlService.GetMonitorById(id)
+	monitor, err := uh.urlService.GetMonitorById(r.Context(), id)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to fetch info: %v", err), http.StatusBadRequest)
@@ -168,7 +168,7 @@ func (uh *UrlHandler) UpdateMonitorStatus(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Invalid Status", http.StatusBadRequest)
 		return
 	}
-	err = uh.urlService.UpdateMonitorStatus(id, status)
+	err = uh.urlService.UpdateMonitorStatus(r.Context(), id, status)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to Update monitor status: %v", err), http.StatusBadRequest)

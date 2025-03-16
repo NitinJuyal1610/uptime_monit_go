@@ -1,39 +1,66 @@
 package config
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
+	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var (
-	//database parameters
-	host     = os.Getenv("DB_HOST")
-	port     = os.Getenv("DB_PORT")
-	user     = os.Getenv("DB_USER")
-	password = os.Getenv("DB_PASSWORD")
-	dbname   = os.Getenv("DB_NAME")
-)
+type PostgresConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+}
 
-func InitDatabase() *sql.DB {
-	//
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+func NewPostgresConnection() *pgxpool.Pool {
 
-	db, err := sql.Open("postgres", psqlInfo)
+	port, _ := strconv.Atoi(os.Getenv("DB_PORT"))
 
-	if err != nil {
-		panic(err)
+	config := &PostgresConfig{
+		Host:     os.Getenv("DB_HOST"),
+		Port:     port,
+		User:     os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		DBName:   os.Getenv("DB_NAME"),
+		SSLMode:  "disable",
 	}
-	//ping db
-	err = db.Ping()
+	//
+	connStr := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=%s",
+		config.Host, config.Port, config.User, config.Password, config.DBName, config.SSLMode)
+
+	poolConfig, err := pgxpool.ParseConfig(connStr)
+
 	if err != nil {
-		panic(err)
+		log.Fatalf("Unable to parse database config: %v", err)
+	}
+
+	poolConfig.MaxConns = 25
+	poolConfig.MinConns = 5
+	poolConfig.MaxConnLifetime = time.Hour
+	poolConfig.MaxConnIdleTime = time.Minute * 30
+	pgpool, err := pgxpool.NewWithConfig(context.Background(), poolConfig)
+
+	if err != nil {
+		log.Fatalf("Unable to create connection pool: %v \n", err)
+	}
+
+	if err := pgpool.Ping(context.Background()); err != nil {
+		log.Fatalf("Cannot reach the database pool: %v", err)
 	}
 
 	fmt.Println("Successfully connected!")
-	return db
+	return pgpool
+}
+
+func CloseConnection(db *pgxpool.Pool) {
+	db.Close()
 }

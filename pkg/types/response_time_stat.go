@@ -1,4 +1,4 @@
-package models
+package types
 
 type ResponseTimeStat struct {
 	Date            string  `json:"date"`

@@ -10,6 +10,7 @@ import (
 	"net/http/httptrace"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
+	"nitinjuyal1610/uptimeMonitor/pkg/types"
 	"os"
 	"sync"
 	"time"
@@ -57,28 +58,28 @@ func NewUrlService(urlRepo repository.UrlRepository, statRepo repository.StatRep
 	return &UrlService{urlRepo: urlRepo, httpClient: httpClient, statRepo: statRepo, emailClient: emailClient}
 }
 
-func (us *UrlService) CreateUrl(urlMonitor *models.UrlMonitors) (int, error) {
-	return us.urlRepo.Create(urlMonitor)
+func (us *UrlService) CreateUrl(ctx context.Context, urlMonitor *models.UrlMonitors) (int, error) {
+	return us.urlRepo.Create(ctx, urlMonitor)
 }
 
-func (us *UrlService) GetAllUrl(status string, keyword string, userId int) ([]*models.UrlMonitors, error) {
-	return us.urlRepo.GetAll(status, keyword, userId)
+func (us *UrlService) GetAllUrl(ctx context.Context, status string, keyword string, userId int) ([]*models.UrlMonitors, error) {
+	return us.urlRepo.GetAll(ctx, status, keyword, userId)
 }
 
-func (us *UrlService) GetMonitorById(id int) (*models.UrlMonitors, error) {
-	return us.urlRepo.GetById(id)
+func (us *UrlService) GetMonitorById(ctx context.Context, id int) (*models.UrlMonitors, error) {
+	return us.urlRepo.GetById(ctx, id)
 }
 
-func (us *UrlService) ProcessDueMonitorURLs() error {
+func (us *UrlService) ProcessDueMonitorURLs(ctx context.Context) error {
 	// Channels for stats and Concurrent api calls limit
 	// Fetch URLs to process
-	monitors, err := us.urlRepo.GetDueMonitors()
+	monitors, err := us.urlRepo.GetDueMonitors(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get urls : %w", err)
 	}
 	statChan := make(chan *RawStats, len(monitors))
 	limitChan := make(chan bool, 15)
-	notifyChan := make(chan *models.NotifyAlert, len(monitors))
+	notifyChan := make(chan *types.NotifyAlert, len(monitors))
 	fmt.Printf("%d urls to be processed \n", len(monitors))
 	var wg sync.WaitGroup
 	for _, url := range monitors {
@@ -95,7 +96,7 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 			stats, err := us.fetchStatsFromUrl(ctx, targetUrl, collectDetailedData)
 
 			if err == nil && stats != nil && !stats.IsUp && url.MaxFailThreshold > 0 && (url.ConsecutiveFails+1 >= url.MaxFailThreshold) {
-				notifyChan <- &models.NotifyAlert{
+				notifyChan <- &types.NotifyAlert{
 					Url:              targetUrl,
 					MonitorId:        monitorId,
 					ConsecutiveFails: consecutiveFails,
@@ -118,10 +119,10 @@ func (us *UrlService) ProcessDueMonitorURLs() error {
 	}()
 
 	go us.handleNotifications(notifyChan)
-	return us.saveResultsToDB(statChan)
+	return us.saveResultsToDB(ctx, statChan)
 }
 
-func (us *UrlService) handleNotifications(notifyChan <-chan *models.NotifyAlert) {
+func (us *UrlService) handleNotifications(notifyChan <-chan *types.NotifyAlert) {
 	for notifyItem := range notifyChan {
 		m := gomail.NewMessage()
 		m.SetHeader("From", "n.juyal99@gmail.com")
@@ -149,7 +150,7 @@ func (us *UrlService) handleNotifications(notifyChan <-chan *models.NotifyAlert)
 	}
 }
 
-func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
+func (us *UrlService) saveResultsToDB(ctx context.Context, statChan <-chan *RawStats) error {
 	const batchSize = 100
 	for {
 		batch := make([]*RawStats, 0, batchSize)
@@ -164,14 +165,14 @@ func (us *UrlService) saveResultsToDB(statChan <-chan *RawStats) error {
 		if len(batch) == 0 {
 			break // No more stats
 		}
-		if err := us.processBatch(batch); err != nil {
+		if err := us.processBatch(ctx, batch); err != nil {
 			return fmt.Errorf("failed to process batch: %w", err)
 		}
 	}
 	return nil
 }
 
-func (us *UrlService) processBatch(batch []*RawStats) error {
+func (us *UrlService) processBatch(ctx context.Context, batch []*RawStats) error {
 	if len(batch) == 0 {
 		return nil
 	}
@@ -209,11 +210,11 @@ func (us *UrlService) processBatch(batch []*RawStats) error {
 		}
 	}
 
-	if _, err := us.statRepo.BulkCreate(monitorChecks); err != nil {
+	if _, err := us.statRepo.BulkCreate(ctx, monitorChecks); err != nil {
 		return fmt.Errorf("failed to save stats to DB: %w", err)
 	}
 
-	if err := us.urlRepo.BulkUpdate(monitorUpdates); err != nil {
+	if err := us.urlRepo.BulkUpdate(ctx, monitorUpdates); err != nil {
 		return fmt.Errorf("failed to update monitors: %w", err)
 	}
 
@@ -301,11 +302,11 @@ func (us *UrlService) fetchStatsFromUrl(ctx context.Context, url string, collect
 	return rawStats, nil
 }
 
-func (us *UrlService) UpdateMonitorStatus(id int, status string) error {
+func (us *UrlService) UpdateMonitorStatus(ctx context.Context, id int, status string) error {
 	updateMontior := &models.UrlMonitors{
 		Status: models.Status(status),
 	}
-	return us.urlRepo.Update(id, updateMontior)
+	return us.urlRepo.Update(ctx, id, updateMontior)
 }
 
 func determineStatus(raw *RawStats) models.Status {

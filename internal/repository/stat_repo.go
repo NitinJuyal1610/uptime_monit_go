@@ -1,31 +1,35 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"nitinjuyal1610/uptimeMonitor/internal/models"
+	"nitinjuyal1610/uptimeMonitor/pkg/types"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type StatRepository interface {
-	GetStatsByMonitorId(monitorId int) (*models.MonitorStats, error)
-	GetAvgResponseData(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error)
-	BulkCreate(monitorChecks []*models.MonitorCheck) ([]int, error)
-	GetUptimeData(monitorId int, startDate string, endDate string) ([]*models.UptimeStat, error)
-	GetDetailedTimeData(monitorId int, startDate string, endDate string) ([]*models.DetailedTimeStat, error)
+	GetStatsByMonitorId(ctx context.Context, monitorId int) (*types.MonitorStats, error)
+	GetAvgResponseData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.ResponseTimeStat, error)
+	BulkCreate(ctx context.Context, monitorChecks []*models.MonitorCheck) ([]int, error)
+	GetUptimeData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.UptimeStat, error)
+	GetDetailedTimeData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.DetailedTimeStat, error)
 }
 
 type StatRepositoryPg struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 
-func NewStatRepository(db *sql.DB) StatRepository {
+func NewStatRepository(db *pgxpool.Pool) StatRepository {
 	return &StatRepositoryPg{db}
 }
 
-func (sr *StatRepositoryPg) GetAvgResponseData(monitorId int, startDate string, endDate string) ([]*models.ResponseTimeStat, error) {
-	rsDateQuery := `
+func (sr *StatRepositoryPg) GetAvgResponseData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.ResponseTimeStat, error) {
+	query := `
 		SELECT
 			DATE(timestamp) as date,
 			mc.monitor_id ,
@@ -39,16 +43,16 @@ func (sr *StatRepositoryPg) GetAvgResponseData(monitorId int, startDate string, 
 		GROUP BY DATE(timestamp), mc.monitor_id , um.url 
 	`
 
-	rows, err := sr.db.Query(rsDateQuery, monitorId, startDate, endDate)
+	rows, err := sr.db.Query(ctx, query, monitorId, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*models.ResponseTimeStat
+	var results []*types.ResponseTimeStat
 
 	for rows.Next() {
-		var rts models.ResponseTimeStat
+		var rts types.ResponseTimeStat
 
 		err := rows.Scan(&rts.Date, &rts.MonitorID, &rts.Url, &rts.AvgResponseTime)
 		if err != nil {
@@ -65,7 +69,7 @@ func (sr *StatRepositoryPg) GetAvgResponseData(monitorId int, startDate string, 
 	return results, nil
 }
 
-func (sr *StatRepositoryPg) GetUptimeData(monitorId int, startDate string, endDate string) ([]*models.UptimeStat, error) {
+func (sr *StatRepositoryPg) GetUptimeData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.UptimeStat, error) {
 
 	uptimeQuery := `
 		SELECT
@@ -83,17 +87,17 @@ func (sr *StatRepositoryPg) GetUptimeData(monitorId int, startDate string, endDa
 		GROUP BY DATE(mc.timestamp),um.url
 	`
 
-	rows, err := sr.db.Query(uptimeQuery, monitorId, startDate, endDate)
+	rows, err := sr.db.Query(ctx, uptimeQuery, monitorId, startDate, endDate)
 
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*models.UptimeStat
+	var results []*types.UptimeStat
 
 	for rows.Next() {
-		var uts models.UptimeStat
+		var uts types.UptimeStat
 
 		err := rows.Scan(&uts.SuccessfulChecks, &uts.FailedChecks, &uts.UptimePercentage, &uts.Date, &uts.Url)
 		if err != nil {
@@ -110,7 +114,7 @@ func (sr *StatRepositoryPg) GetUptimeData(monitorId int, startDate string, endDa
 	return results, nil
 }
 
-func (sr *StatRepositoryPg) GetStatsByMonitorId(monitorId int) (*models.MonitorStats, error) {
+func (sr *StatRepositoryPg) GetStatsByMonitorId(ctx context.Context, monitorId int) (*types.MonitorStats, error) {
 	statsQuery := `
 		WITH hourlyStats AS (
 			SELECT  
@@ -143,9 +147,9 @@ func (sr *StatRepositoryPg) GetStatsByMonitorId(monitorId int) (*models.MonitorS
 		GROUP BY um.id, um.url, um.status, um.last_checked, hs.daily_uptime_percentage, hs.daily_avg_response_time, hs.monitor_id;
 	`
 
-	row := sr.db.QueryRow(statsQuery, monitorId)
+	row := sr.db.QueryRow(ctx, statsQuery, monitorId)
 
-	var monitorStats models.MonitorStats
+	var monitorStats types.MonitorStats
 
 	err := row.Scan(
 		&monitorStats.ID,
@@ -170,7 +174,7 @@ func (sr *StatRepositoryPg) GetStatsByMonitorId(monitorId int) (*models.MonitorS
 	return &monitorStats, nil
 }
 
-func (sr *StatRepositoryPg) BulkCreate(monitorChecks []*models.MonitorCheck) ([]int, error) {
+func (sr *StatRepositoryPg) BulkCreate(ctx context.Context, monitorChecks []*models.MonitorCheck) ([]int, error) {
 
 	if len(monitorChecks) == 0 {
 		return nil, nil
@@ -189,7 +193,7 @@ func (sr *StatRepositoryPg) BulkCreate(monitorChecks []*models.MonitorCheck) ([]
 		INSERT INTO monitor_checks (monitor_id, status_code, response_time, is_up, ttfb, content_size, request_type)
 		VALUES %s RETURNING id`, strings.Join(valueStrings, ", "))
 
-	rows, err := sr.db.Query(query, valueArgs...)
+	rows, err := sr.db.Query(ctx, query, valueArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +214,7 @@ func (sr *StatRepositoryPg) BulkCreate(monitorChecks []*models.MonitorCheck) ([]
 	return entityIds, nil
 }
 
-func (sr *StatRepositoryPg) GetDetailedTimeData(monitorId int, startDate string, endDate string) ([]*models.DetailedTimeStat, error) {
+func (sr *StatRepositoryPg) GetDetailedTimeData(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.DetailedTimeStat, error) {
 	rsDateQuery := `
 		SELECT 
 			mc.timestamp,
@@ -231,16 +235,16 @@ func (sr *StatRepositoryPg) GetDetailedTimeData(monitorId int, startDate string,
 			AND mc.request_type=$4
 	`
 
-	rows, err := sr.db.Query(rsDateQuery, monitorId, startDate, endDate, http.MethodGet)
+	rows, err := sr.db.Query(ctx, rsDateQuery, monitorId, startDate, endDate, http.MethodGet)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []*models.DetailedTimeStat
+	var results []*types.DetailedTimeStat
 
 	for rows.Next() {
-		var rts models.DetailedTimeStat
+		var rts types.DetailedTimeStat
 
 		err := rows.Scan(&rts.Timestamp, &rts.ResponseTime, &rts.Ttfb, &rts.ContentSize, &rts.RequestType, &rts.Url)
 		if err != nil {

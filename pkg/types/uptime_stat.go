@@ -1,4 +1,4 @@
-package models
+package types
 
 type UptimeStat struct {
 	Date             string  `json:"date"`

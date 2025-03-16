@@ -1,9 +1,10 @@
 package service
 
 import (
+	"context"
 	"fmt"
-	"nitinjuyal1610/uptimeMonitor/internal/models"
 	"nitinjuyal1610/uptimeMonitor/internal/repository"
+	"nitinjuyal1610/uptimeMonitor/pkg/types"
 	"nitinjuyal1610/uptimeMonitor/pkg/utils"
 	"strings"
 	"time"
@@ -21,12 +22,12 @@ func NewStatsService(statRepo repository.StatRepository) *StatService {
 	return &StatService{statRepo}
 }
 
-func (ss *StatService) GetStatSummary(monitorId int) (*models.MonitorStats, error) {
-	return ss.statRepo.GetStatsByMonitorId(monitorId)
+func (ss *StatService) GetStatSummary(ctx context.Context, monitorId int) (*types.MonitorStats, error) {
+	return ss.statRepo.GetStatsByMonitorId(ctx, monitorId)
 }
 
-func (ss *StatService) CreateAvgResponseGraph(monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
-	responseInfo, err := ss.statRepo.GetAvgResponseData(monitorId, startDate, endDate)
+func (ss *StatService) CreateAvgResponseGraph(ctx context.Context, monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
+	responseInfo, err := ss.statRepo.GetAvgResponseData(ctx, monitorId, startDate, endDate)
 
 	if err != nil {
 		return render.ChartSnippet{}, err
@@ -122,8 +123,8 @@ func (ss *StatService) CreateAvgResponseGraph(monitorId int, startDate string, e
 	return lineChart.RenderSnippet(), nil
 }
 
-func (ss *StatService) CreateUptimeTrend(monitorId int, startDate string, endDate string) ([]*models.UptimeStat, error) {
-	responseInfo, err := ss.statRepo.GetUptimeData(monitorId, startDate, endDate)
+func (ss *StatService) CreateUptimeTrend(ctx context.Context, monitorId int, startDate string, endDate string) ([]*types.UptimeStat, error) {
+	responseInfo, err := ss.statRepo.GetUptimeData(ctx, monitorId, startDate, endDate)
 
 	if err != nil {
 		return nil, err
@@ -226,8 +227,8 @@ func (ss *StatService) CreateUptimeTrend(monitorId int, startDate string, endDat
 	// return lineChart.RenderSnippet(), nil
 }
 
-func (ss *StatService) CreateDetailedTimeGraph(monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
-	responseInfo, err := ss.statRepo.GetDetailedTimeData(monitorId, startDate, endDate)
+func (ss *StatService) CreateDetailedTimeGraph(ctx context.Context, monitorId int, startDate string, endDate string) (render.ChartSnippet, error) {
+	responseInfo, err := ss.statRepo.GetDetailedTimeData(ctx, monitorId, startDate, endDate)
 	if err != nil {
 		return render.ChartSnippet{}, err
 	}

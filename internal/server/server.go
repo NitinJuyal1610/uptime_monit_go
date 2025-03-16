@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"nitinjuyal1610/uptimeMonitor/internal/config"
@@ -10,20 +9,21 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 // server returns a new server
 type Server struct {
 	port     int
-	db       *sql.DB
+	db       *pgxpool.Pool
 	Services *service.Services
 }
 
 func New() (*Server, *http.Server) {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 
-	db := config.InitDatabase()
+	db := config.NewPostgresConnection()
 	//services init
 	svcs := service.NewServices(db)
 	srv := &Server{
