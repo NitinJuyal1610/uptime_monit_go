@@ -38,7 +38,7 @@ Uptime Monitor is a Golang-based project designed to track website availability 
 
 ## Tech Stack
 
-- **Backend:** Golang (net/http), PostgreSQL, Redis
+- **Backend:** Golang (net/http), PostgreSQL
 - **Frontend:** HTMX, Tailwind CSS
 - **Charting:** go-echarts
 
