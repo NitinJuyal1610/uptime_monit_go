@@ -1,8 +1,9 @@
 services:
   go-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: nitinjuyal/uptime_monit_go
     container_name: uptime-app
     hostname: uptime-app
     networks:
@@ -16,7 +17,7 @@ services:
       - .env
     environment:
       - PORT=${PORT:-8080}
-      - DB_HOST=${DB_HOST:-postgres}
+      - DB_HOST=${DB_HOST:-db}
       - DB_PORT=${DB_PORT:-5432}
       - DB_USER=${DB_USER:-pguser}
       - DB_PASSWORD=${DB_PASSWORD:?database password not set}

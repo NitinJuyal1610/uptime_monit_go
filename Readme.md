@@ -34,6 +34,7 @@ Uptime Monitor is a Golang-based project designed to track website availability 
 - **Multi-URL Stats Comparison**
 - **Cloud Deployment**
 - **Refactoring**
+- **SSE/Websocket**
 
 ## Tech Stack
 
@@ -64,8 +65,8 @@ Uptime Monitor is a Golang-based project designed to track website availability 
     GMAIL_PASS=xxxx xxxx xxxx xxxx
     SESSION_SECRET=session_secret
    ```
-4. Run the backend:
+4. Run the application using Docker Compose:
    ```sh
-   go run main.go
+   docker-compose up --build
    ```
 5. Open the frontend UI in a browser.
